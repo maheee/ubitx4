@@ -81,6 +81,7 @@ void drawMeter(int8_t needle) {
   meter[i] = 0;
 }
 
+
 // The generic routine to display one line on the LCD
 void printLine(char linenmbr, char *c) {
   if (strcmp(c, printBuff[linenmbr])) {     // only refresh the display when there was a change
@@ -94,14 +95,19 @@ void printLine(char linenmbr, char *c) {
   }
 }
 
+void printLineF(char linenmbr, const __FlashStringHelper *c) {
+  int i;
+  char tmpBuff[17];
+  PGM_P p = reinterpret_cast<PGM_P>(c);
 
-//  short cut to print to the first line
-void printLine1(char *c) {
-  printLine(1, c);
-}
-//  short cut to print to the first line
-void printLine2(char *c) {
-  printLine(0, c);
+  for (i = 0; i < 17; i++) {
+    unsigned char fChar = pgm_read_byte(p++);
+    tmpBuff[i] = fChar;
+    if (fChar == 0)
+      break;
+  }
+
+  printLine(linenmbr, tmpBuff);
 }
 
 // this builds up the top line of the display with frequency and mode

@@ -3,7 +3,18 @@
 
 
 /**
-   Pin Setup
+   Helper
+*/
+// short cut to print first or second line
+#define printLineF1(x) (printLineF(1, x))
+#define printLineF2(x) (printLineF(0, x))
+
+#define printLine1(x) (printLine(1, x))
+#define printLine2(x) (printLine(0, x))
+
+
+/**
+    Pin Setup
 */
 #define ENC_A (A0)
 #define ENC_B (A1)
@@ -514,7 +525,7 @@ void setup() {
 
   //we print this line so this shows up even if the raduino
   //crashes later in the code
-  printLine2("uBITX v4.3");
+  printLineF2(F("uBITX v4.?"));
   //active_delay(500);
 
   //  initMeter(); //not used in this build
