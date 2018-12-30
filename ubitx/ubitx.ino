@@ -1,57 +1,11 @@
   /**
  * This source file is under General Public License version 3.
- * 
- * This verision uses a built-in Si5351 library
- * Most source code are meant to be understood by the compilers and the computers. 
- * Code that has to be hackable needs to be well understood and properly documented. 
- * Donald Knuth coined the term Literate Programming to indicate code that is written be 
- * easily read and understood.
- * 
- * The Raduino is a small board that includes the Arduin Nano, a 16x2 LCD display and
- * an Si5351a frequency synthesizer. This board is manufactured by Paradigm Ecomm Pvt Ltd
- * 
- * To learn more about Arduino you may visit www.arduino.cc. 
- * 
- * The Arduino works by starts executing the code in a function called setup() and then it 
- * repeatedly keeps calling loop() forever. All the initialization code is kept in setup()
- * and code to continuously sense the tuning knob, the function button, transmit/receive,
- * etc is all in the loop() function. If you wish to study the code top down, then scroll
- * to the bottom of this file and read your way up.
- * 
- * Below are the libraries to be included for building the Raduino 
- * The EEPROM library is used to store settings like the frequency memory, caliberation data, 
- * callsign etc .
- *
- *  The main chip which generates upto three oscillators of various frequencies in the
- *  Raduino is the Si5351a. To learn more about Si5351a you can download the datasheet 
- *  from www.silabs.com although, strictly speaking it is not a requirment to understand this code. 
- *  Instead, you can look up the Si5351 library written by xxx, yyy. You can download and 
- *  install it from www.url.com to complile this file.
- *  The Wire.h library is used to talk to the Si5351 and we also declare an instance of 
- *  Si5351 object to control the clocks.
  */
+
 #include <Wire.h>
 #include <EEPROM.h>
 
 /**
-    The main chip which generates upto three oscillators of various frequencies in the
-    Raduino is the Si5351a. To learn more about Si5351a you can download the datasheet
-    from www.silabs.com although, strictly speaking it is not a requirment to understand this code.
-
-    We no longer use the standard SI5351 library because of its huge overhead due to many unused
-    features consuming a lot of program space. Instead of depending on an external library we now use
-    Jerry Gaffke's, KE7ER, lightweight standalone mimimalist "si5351bx" routines (see further down the
-    code). Here are some defines and declarations used by Jerry's routines:
-*/
-
-
-/**
- * We need to carefully pick assignment of pin for various purposes.
- * There are two sets of completely programmable pins on the Raduino.
- * First, on the top of the board, in line with the LCD connector is an 8-pin connector
- * that is largely meant for analog inputs and front-panel control. It has a regulated 5v output,
- * ground and six pins. Each of these six pins can be individually programmed 
- * either as an analog input, a digital input or a digital output. 
  * The pins are assigned as follows (left to right, display facing you): 
  *      Pin 1 (Violet), A7, SPARE
  *      Pin 2 (Blue),   A6, KEYER (DATA)
@@ -62,16 +16,7 @@
  *      Pin 7 (Brown),  A1, ENC B
  *      Pin 8 (Black),  A0, ENC A
  *Note: A5, A4 are wired to the Si5351 as I2C interface 
- *       *     
- * Though, this can be assigned anyway, for this application of the Arduino, we will make the following
- * assignment
- * A2 will connect to the PTT line, which is the usually a part of the mic connector
- * A3 is connected to a push button that can momentarily ground this line. This will be used for RIT/Bandswitching, etc.
- * A6 is to implement a keyer, it is reserved and not yet implemented
- * A7 is connected to a center pin of good quality 100K or 10K linear potentiometer with the two other ends connected to
- * ground and +5v lines available on the connector. This implments the tuning mechanism
  */
-
 #define ENC_A (A0)
 #define ENC_B (A1)
 #define FBUTTON (A2)
@@ -80,30 +25,14 @@
 #define ANALOG_SPARE (A7)
 
 /** 
- * The Raduino board is the size of a standard 16x2 LCD panel. It has three connectors:
- * 
- * First, is an 8 pin connector that provides +5v, GND and six analog input pins that can also be 
- * configured to be used as digital input or output pins. These are referred to as A0,A1,A2,
- * A3,A6 and A7 pins. The A4 and A5 pins are missing from this connector as they are used to 
- * talk to the Si5351 over I2C protocol. 
- * 
- * Second is a 16 pin LCD connector. This connector is meant specifically for the standard 16x2
- * LCD display in 4 bit mode. The 4 bit mode requires 4 data lines and two control lines to work:
- * Lines used are : RESET, ENABLE, D4, D5, D6, D7 
- * We include the library and declare the configuration of the LCD panel too
+ * The 4 bit mode of the LCD is used. It requires 4 data lines and two control lines to work.
  */
-
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(8,9,10,11,12,13);
+LiquidCrystal lcd(8,     9,      10, 11, 12, 13);
+//                RESET, ENABLE, D4, D5, D6, D7
 
 /**
- * The Arduino, unlike C/C++ on a regular computer with gigabytes of RAM, has very little memory.
- * We have to be very careful with variables that are declared inside the functions as they are 
- * created in a memory region called the stack. The stack has just a few bytes of space on the Arduino
- * if you declare large strings inside functions, they can easily exceed the capacity of the stack
- * and mess up your programs. 
- * We circumvent this by declaring a few global buffers as  kitchen counters where we can 
- * slice and dice our strings. These strings are mostly used to control the display or handle
+ * Global buffers as  kitchen counters where we can slice and dice our strings. These strings are mostly used to control the display or handle
  * the input and output from the USB port. We must keep a count of the bytes used while reading
  * the serial port as we can easily run out of buffer space. This is done in the serial_in_count variable.
  */
@@ -129,7 +58,7 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_KEY (2)
 
 /**
- * These are the indices where these user changable settinngs are stored  in the EEPROM
+ * These are the indices where these user changable settings are stored in the EEPROM
  */
 #define MASTER_CAL 0
 #define LSB_CAL 4
@@ -141,8 +70,8 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_SIDETONE 24
 #define CW_SPEED 28
 
-//These are defines for the new features back-ported from KD8CEC's software
-//these start from beyond 256 as Ian, KD8CEC has kept the first 256 bytes free for the base version
+// These are defines for the new features back-ported from KD8CEC's software
+// these start from beyond 256 as Ian, KD8CEC has kept the first 256 bytes free for the base version
 #define VFO_A_MODE  256 // 2: LSB, 3: USB
 #define VFO_B_MODE  257
 
@@ -154,20 +83,7 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_KEY_TYPE 358
 
 /**
- * The uBITX is an upconnversion transceiver. The first IF is at 45 MHz.
- * The first IF frequency is not exactly at 45 Mhz but about 5 khz lower,
- * this shift is due to the loading on the 45 Mhz crystal filter by the matching
- * L-network used on it's either sides.
- * The first oscillator works between 48 Mhz and 75 MHz. The signal is subtracted
- * from the first oscillator to arriive at 45 Mhz IF. Thus, it is inverted : LSB becomes USB
- * and USB becomes LSB.
- * The second IF of 12 Mhz has a ladder crystal filter. If a second oscillator is used at 
- * 57 Mhz, the signal is subtracted FROM the oscillator, inverting a second time, and arrives 
- * at the 12 Mhz ladder filter thus doouble inversion, keeps the sidebands as they originally were.
- * If the second oscillator is at 33 Mhz, the oscilaltor is subtracated from the signal, 
- * thus keeping the signal's sidebands inverted. The USB will become LSB.
- * We use this technique to switch sidebands. This is to avoid placing the lsbCarrier close to
- * 12 MHz where its fifth harmonic beats with the arduino's 16 Mhz oscillator's fourth harmonic
+ * Oscillator Setup
  */
 
 // the second oscillator should ideally be at 57 MHz, however, the crystal filter's center frequency 
@@ -221,14 +137,8 @@ boolean modeCalibrate = false;//this mode of menus shows extended menus to calib
                               //beat frequency
 
 /**
- * Below are the basic functions that control the uBitx. Understanding the functions before 
- * you start hacking around
- */
-
-/**
  * Our own delay. During any delay, the raduino should still be processing a few times. 
  */
-
 void active_delay(int delay_by){
   unsigned long timeStart = millis();
 
@@ -240,20 +150,7 @@ void active_delay(int delay_by){
 
 /**
  * Select the properly tx harmonic filters
- * The four harmonic filters use only three relays
- * the four LPFs cover 30-21 Mhz, 18 - 14 Mhz, 7-10 MHz and 3.5 to 5 Mhz
- * Briefly, it works like this, 
- * - When KT1 is OFF, the 'off' position routes the PA output through the 30 MHz LPF
- * - When KT1 is ON, it routes the PA output to KT2. Which is why you will see that
- *   the KT1 is on for the three other cases.
- * - When the KT1 is ON and KT2 is off, the off position of KT2 routes the PA output
- *   to 18 MHz LPF (That also works for 14 Mhz) 
- * - When KT1 is On, KT2 is On, it routes the PA output to KT3
- * - KT3, when switched on selects the 7-10 Mhz filter
- * - KT3 when switched off selects the 3.5-5 Mhz filter
- * See the circuit to understand this
  */
-
 void setTXFilters(unsigned long freq){
   
   if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
@@ -290,7 +187,6 @@ void setTXFilters(unsigned long freq){
  * either 12 Mhz below or above the 45 Mhz signal thereby inverting the sidebands 
  * through mixing of the second local oscillator.
  */
- 
 void setFrequency(unsigned long f){
   uint64_t osc_f, firstOscillator, secondOscillator;
  
@@ -314,7 +210,6 @@ void setFrequency(unsigned long f){
  * Note: In cw mode, doesnt key the radio, only puts it in tx mode
  * CW offest is calculated as lower than the operating frequency when in LSB mode, and vice versa in USB mode
  */
- 
 void startTx(byte txMode){
   unsigned long tx_freq = 0;  
     
@@ -454,8 +349,6 @@ void checkButton(){
  * This way, you can quickly move to another band by just spinning the 
  * tuning knob
  */
-
-
 void doTuning(){
   int s;
   unsigned long prev_freq;
