@@ -100,12 +100,12 @@ void si5351bx_setfreq(uint8_t clknum, uint32_t fout) {  // Set a CLK to fout Hz
   i2cWrite(3, si5351bx_clken);        // Enable/disable clock
 }
 
-void si5351_set_calibration(int32_t cal){
-    si5351bx_vcoa = (SI5351BX_XTAL * SI5351BX_MSA) + cal; // apply the calibration correction factor
-    si5351bx_setfreq(0, usbCarrier);
+void si5351_set_calibration(int32_t cal) {
+  si5351bx_vcoa = (SI5351BX_XTAL * SI5351BX_MSA) + cal; // apply the calibration correction factor
+  si5351bx_setfreq(0, usbCarrier);
 }
 
-void initOscillators(){
+void initOscillators() {
   //initialize the SI5351
   si5351bx_init();
   si5351bx_vcoa = (SI5351BX_XTAL * SI5351BX_MSA) + calibration; // apply the calibration correction factor

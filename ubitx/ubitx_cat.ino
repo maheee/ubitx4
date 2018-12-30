@@ -1,19 +1,19 @@
 /**
- * The CAT protocol is used by many radios to provide remote control to comptuers through
- * the serial port.
- * 
- * This is very much a work in progress. Parts of this code have been liberally
- * borrowed from other GPLicensed works like hamlib.
- * 
- * WARNING : This is an unstable version and it has worked with fldigi, 
- * it gives time out error with WSJTX 1.8.0  
- */
+   The CAT protocol is used by many radios to provide remote control to comptuers through
+   the serial port.
+
+   This is very much a work in progress. Parts of this code have been liberally
+   borrowed from other GPLicensed works like hamlib.
+
+   WARNING : This is an unstable version and it has worked with fldigi,
+   it gives time out error with WSJTX 1.8.0
+*/
 
 static unsigned long rxBufferArriveTime = 0;
 static byte rxBufferCheckCount = 0;
 #define CAT_RECEIVE_TIMEOUT 500
-static byte cat[5]; 
-static byte insideCat = 0; 
+static byte cat[5];
+static byte insideCat = 0;
 
 //for broken protocol
 #define CAT_RECEIVE_TIMEOUT 500
@@ -32,14 +32,14 @@ static byte insideCat = 0;
 
 unsigned int skipTimeCount = 0;
 
-byte setHighNibble(byte b,byte v) {
+byte setHighNibble(byte b, byte v) {
   // Clear the high nibble
   b &= 0x0f;
   // Set the high nibble
   return b | ((v & 0x0f) << 4);
 }
 
-byte setLowNibble(byte b,byte v) {
+byte setLowNibble(byte b, byte v) {
   // Clear the low nibble
   b &= 0xf0;
   // Set the low nibble
@@ -55,9 +55,9 @@ byte getLowNibble(byte b) {
 }
 
 // Takes a number and produces the requested number of decimal digits, staring
-// from the least significant digit.  
+// from the least significant digit.
 //
-void getDecimalDigits(unsigned long number,byte* result,int digits) {
+void getDecimalDigits(unsigned long number, byte* result, int digits) {
   for (int i = 0; i < digits; i++) {
     // "Mask off" (in a decimal sense) the LSD and return it
     result[i] = number % 10;
@@ -68,21 +68,21 @@ void getDecimalDigits(unsigned long number,byte* result,int digits) {
 
 // Takes a frequency and writes it into the CAT command buffer in BCD form.
 //
-void writeFreq(unsigned long freq,byte* cmd) {
+void writeFreq(unsigned long freq, byte* cmd) {
   // Convert the frequency to a set of decimal digits. We are taking 9 digits
   // so that we can get up to 999 MHz. But the protocol doesn't care about the
   // LSD (1's place), so we ignore that digit.
   byte digits[9];
-  getDecimalDigits(freq,digits,9);
-  // Start from the LSB and get each nibble 
-  cmd[3] = setLowNibble(cmd[3],digits[1]);
-  cmd[3] = setHighNibble(cmd[3],digits[2]);
-  cmd[2] = setLowNibble(cmd[2],digits[3]);
-  cmd[2] = setHighNibble(cmd[2],digits[4]);
-  cmd[1] = setLowNibble(cmd[1],digits[5]);
-  cmd[1] = setHighNibble(cmd[1],digits[6]);
-  cmd[0] = setLowNibble(cmd[0],digits[7]);
-  cmd[0] = setHighNibble(cmd[0],digits[8]);  
+  getDecimalDigits(freq, digits, 9);
+  // Start from the LSB and get each nibble
+  cmd[3] = setLowNibble(cmd[3], digits[1]);
+  cmd[3] = setHighNibble(cmd[3], digits[2]);
+  cmd[2] = setLowNibble(cmd[2], digits[3]);
+  cmd[2] = setHighNibble(cmd[2], digits[4]);
+  cmd[1] = setLowNibble(cmd[1], digits[5]);
+  cmd[1] = setHighNibble(cmd[1], digits[6]);
+  cmd[0] = setLowNibble(cmd[0], digits[7]);
+  cmd[0] = setHighNibble(cmd[0], digits[8]);
 }
 
 // This function takes a frquency that is encoded using 4 bytes of BCD
@@ -91,24 +91,24 @@ void writeFreq(unsigned long freq,byte* cmd) {
 // [12][34][56][78] = 123.45678? Mhz
 //
 unsigned long readFreq(byte* cmd) {
-    // Pull off each of the digits
-    byte d7 = getHighNibble(cmd[0]);
-    byte d6 = getLowNibble(cmd[0]);
-    byte d5 = getHighNibble(cmd[1]);
-    byte d4 = getLowNibble(cmd[1]); 
-    byte d3 = getHighNibble(cmd[2]);
-    byte d2 = getLowNibble(cmd[2]); 
-    byte d1 = getHighNibble(cmd[3]);
-    byte d0 = getLowNibble(cmd[3]); 
-    return  
-      (unsigned long)d7 * 100000000L +
-      (unsigned long)d6 * 10000000L +
-      (unsigned long)d5 * 1000000L + 
-      (unsigned long)d4 * 100000L + 
-      (unsigned long)d3 * 10000L + 
-      (unsigned long)d2 * 1000L + 
-      (unsigned long)d1 * 100L + 
-      (unsigned long)d0 * 10L; 
+  // Pull off each of the digits
+  byte d7 = getHighNibble(cmd[0]);
+  byte d6 = getLowNibble(cmd[0]);
+  byte d5 = getHighNibble(cmd[1]);
+  byte d4 = getLowNibble(cmd[1]);
+  byte d3 = getHighNibble(cmd[2]);
+  byte d2 = getLowNibble(cmd[2]);
+  byte d1 = getHighNibble(cmd[3]);
+  byte d0 = getLowNibble(cmd[3]);
+  return
+    (unsigned long)d7 * 100000000L +
+    (unsigned long)d6 * 10000000L +
+    (unsigned long)d5 * 1000000L +
+    (unsigned long)d4 * 100000L +
+    (unsigned long)d3 * 10000L +
+    (unsigned long)d2 * 1000L +
+    (unsigned long)d1 * 100L +
+    (unsigned long)d0 * 10L;
 }
 
 //void ReadEEPRom_FT817(byte fromType)
@@ -117,18 +117,18 @@ void catReadEEPRom(void)
   //for remove warnings
   byte temp0 = cat[0];
   byte temp1 = cat[1];
-/*
-  itoa((int) cat[0], b, 16);
-  strcat(b, ":");
-  itoa((int) cat[1], c, 16);
-  strcat(b, c);
-  printLine2(b);
-*/
+  /*
+    itoa((int) cat[0], b, 16);
+    strcat(b, ":");
+    itoa((int) cat[1], c, 16);
+    strcat(b, c);
+    printLine2(b);
+  */
 
   cat[0] = 0;
   cat[1] = 0;
   //for remove warnings[1] = 0;
-  
+
   switch (temp1)
   {
     case 0x45 : //
@@ -182,7 +182,7 @@ void catReadEEPRom(void)
       //5-4 :  Lock Mode (#32) 00 = Dial, 01 = Freq, 10 = Panel
       //7-6 :  Op Filter (#38) 00 = Off, 01 = SSB, 10 = CW
       //CAT_BUFF[0] = 0x08;
-      cat[0] = (sideTone - 300)/50;
+      cat[0] = (sideTone - 300) / 50;
       cat[1] = 0x25;
       break;
     case 0x61 : //Sidetone (Volume) (#44)
@@ -219,13 +219,13 @@ void catReadEEPRom(void)
     case 0x67 : //6-0  SSB Mic (#46) Contains 0-100 (decimal) as displayed
       cat[0] = 0xB2;
       cat[1] = 0xB2;
-      break;      case 0x69 : //FM Mic (#29)  Contains 0-100 (decimal) as displayed
+    break;      case 0x69 : //FM Mic (#29)  Contains 0-100 (decimal) as displayed
     case 0x78 :
       if (isUSB)
         cat[0] = CAT_MODE_USB;
       else
         cat[0] = CAT_MODE_LSB;
-        
+
       if (cat[0] != 0) cat[0] = 1 << 5;
       break;
     case  0x79 : //
@@ -264,130 +264,130 @@ void processCATCommand2(byte* cmd) {
   byte response[5];
   unsigned long f;
 
-  switch(cmd[4]){
-/*  case 0x00:
-    response[0]=0;
-    Serial.write(response, 1);
-    break;
-*/    
-  case 0x01:
-    //set frequency
-    f = readFreq(cmd);
-    setFrequency(f);   
-    updateDisplay();
-    response[0]=0;
-    Serial.write(response, 1);
-    //sprintf(b, "set:%ld", f); 
-    //printLine2(b);
-    break;
-
-  case 0x02:
-    //split on 
-    splitOn =  1;
-    break;
-  case 0x82:
-    //split off
-    splitOn = 0;
-    break;
-    
-  case 0x03:
-    writeFreq(frequency,response); // Put the frequency into the buffer
-    if (isUSB)
-      response[4] = 0x01; //USB
-    else
-      response[4] = 0x00; //LSB
-    Serial.write(response,5);
-    //printLine2("cat:getfreq");
-    break;
-    
-  case 0x07: // set mode
-    if (cmd[0] == 0x00 || cmd[0] == 0x03)
-      isUSB = 0;
-    else
-      isUSB = 1;
-    response[0] = 0x00;
-    Serial.write(response, 1);
-    setFrequency(frequency);
-      //printLine2("cat: mode changed");
-    //updateDisplay();
-    break;   
- 
-  case 0x08: // PTT On
-    if (!inTx) {
-      response[0] = 0;
-      txCAT = true;
-      startTx(TX_SSB);
+  switch (cmd[4]) {
+    /*  case 0x00:
+        response[0]=0;
+        Serial.write(response, 1);
+        break;
+    */
+    case 0x01:
+      //set frequency
+      f = readFreq(cmd);
+      setFrequency(f);
       updateDisplay();
-    } else {
-      response[0] = 0xf0;
-    } 
-    Serial.write(response,1);
-    updateDisplay();
-    break;
-
-  case 0x88 : //PTT OFF
-    if (inTx) {
-      stopTx();
-      txCAT = false;
-    }
-    response[0] = 0;
-    Serial.write(response,1);
-    updateDisplay();
-    break;
-
-  case 0x81:
-    //toggle the VFOs
-    response[0] = 0;
-    menuVfoToggle(1); // '1' forces it to change the VFO
-    Serial.write(response,1);
-    updateDisplay();
-    break;
-
- case 0xBB:  //Read FT-817 EEPROM Data  (for comfirtable)
-    catReadEEPRom();
-    break;
-
-  case 0xe7 : 
-    // get receiver status, we have hardcoded this as
-    //as we dont' support ctcss, etc.
-    response[0] = 0x09;
-    Serial.write(response,1);
-    break;
-       
-  case 0xf7:
-    {
-      boolean isHighSWR = false;
-      boolean isSplitOn = false;
-  
-      /*
-        Inverted -> *ptt = ((p->tx_status & 0x80) == 0); <-- souce code in ft817.c (hamlib)
-      */
-      response[0] = ((inTx ? 0 : 1) << 7) +
-        ((isHighSWR ? 1 : 0) << 6) +  //hi swr off / on
-        ((isSplitOn ? 1 : 0) << 5) + //Split on / off
-        (0 << 4) +  //dummy data
-        0x08;  //P0 meter data
-
+      response[0] = 0;
       Serial.write(response, 1);
-    }
-    break;
-    
-  default:
-    //somehow, get this to print the four bytes
-    ultoa(*((unsigned long *)cmd), c, 16);
-    itoa(cmd[4], b, 16);
-    strcat(b, ">");
-    strcat(b, c);
-    printLine2(b);
-    response[0] = 0x00;
-    Serial.write(response[0]);
+      //sprintf(b, "set:%ld", f);
+      //printLine2(b);
+      break;
+
+    case 0x02:
+      //split on
+      splitOn =  1;
+      break;
+    case 0x82:
+      //split off
+      splitOn = 0;
+      break;
+
+    case 0x03:
+      writeFreq(frequency, response); // Put the frequency into the buffer
+      if (isUSB)
+        response[4] = 0x01; //USB
+      else
+        response[4] = 0x00; //LSB
+      Serial.write(response, 5);
+      //printLine2("cat:getfreq");
+      break;
+
+    case 0x07: // set mode
+      if (cmd[0] == 0x00 || cmd[0] == 0x03)
+        isUSB = 0;
+      else
+        isUSB = 1;
+      response[0] = 0x00;
+      Serial.write(response, 1);
+      setFrequency(frequency);
+      //printLine2("cat: mode changed");
+      //updateDisplay();
+      break;
+
+    case 0x08: // PTT On
+      if (!inTx) {
+        response[0] = 0;
+        txCAT = true;
+        startTx(TX_SSB);
+        updateDisplay();
+      } else {
+        response[0] = 0xf0;
+      }
+      Serial.write(response, 1);
+      updateDisplay();
+      break;
+
+    case 0x88 : //PTT OFF
+      if (inTx) {
+        stopTx();
+        txCAT = false;
+      }
+      response[0] = 0;
+      Serial.write(response, 1);
+      updateDisplay();
+      break;
+
+    case 0x81:
+      //toggle the VFOs
+      response[0] = 0;
+      menuVfoToggle(1); // '1' forces it to change the VFO
+      Serial.write(response, 1);
+      updateDisplay();
+      break;
+
+    case 0xBB:  //Read FT-817 EEPROM Data  (for comfirtable)
+      catReadEEPRom();
+      break;
+
+    case 0xe7 :
+      // get receiver status, we have hardcoded this as
+      //as we dont' support ctcss, etc.
+      response[0] = 0x09;
+      Serial.write(response, 1);
+      break;
+
+    case 0xf7:
+      {
+        boolean isHighSWR = false;
+        boolean isSplitOn = false;
+
+        /*
+          Inverted -> *ptt = ((p->tx_status & 0x80) == 0); <-- souce code in ft817.c (hamlib)
+        */
+        response[0] = ((inTx ? 0 : 1) << 7) +
+                      ((isHighSWR ? 1 : 0) << 6) +  //hi swr off / on
+                      ((isSplitOn ? 1 : 0) << 5) + //Split on / off
+                      (0 << 4) +  //dummy data
+                      0x08;  //P0 meter data
+
+        Serial.write(response, 1);
+      }
+      break;
+
+    default:
+      //somehow, get this to print the four bytes
+      ultoa(*((unsigned long *)cmd), c, 16);
+      itoa(cmd[4], b, 16);
+      strcat(b, ">");
+      strcat(b, c);
+      printLine2(b);
+      response[0] = 0x00;
+      Serial.write(response[0]);
   }
 
   insideCat = false;
 }
 
 int catCount = 0;
-void checkCAT(){
+void checkCAT() {
   byte i;
 
   //Check Serial Port Buffer
@@ -396,23 +396,23 @@ void checkCAT(){
     return;
   }
   else if (Serial.available() < 5) {                         //First Arrived
-    if (rxBufferCheckCount == 0){
+    if (rxBufferCheckCount == 0) {
       rxBufferCheckCount = Serial.available();
       rxBufferArriveTime = millis() + CAT_RECEIVE_TIMEOUT;  //Set time for timeout
     }
-    else if (rxBufferArriveTime < millis()){                //Clear Buffer
+    else if (rxBufferArriveTime < millis()) {               //Clear Buffer
       for (i = 0; i < Serial.available(); i++)
         rxBufferCheckCount = Serial.read();
       rxBufferCheckCount = 0;
     }
-    else if (rxBufferCheckCount < Serial.available()){      // Increase buffer count, slow arrive
+    else if (rxBufferCheckCount < Serial.available()) {     // Increase buffer count, slow arrive
       rxBufferCheckCount = Serial.available();
       rxBufferArriveTime = millis() + CAT_RECEIVE_TIMEOUT;  //Set time for timeout
     }
     return;
   }
 
-    
+
   //Arived CAT DATA
   for (i = 0; i < 5; i++)
     cat[i] = Serial.read();
@@ -423,14 +423,14 @@ void checkCAT(){
     return;
   insideCat = 1;
 
-/**
- *  This routine is enabled to debug the cat protocol
-  catCount++;
+  /**
+      This routine is enabled to debug the cat protocol
+    catCount++;
 
-  if (cat[4] != 0xf7 && cat[4] != 0xbb && cat[4] != 0x03){
-    sprintf(b, "%d %02x %02x%02x%02x%02x", catCount, cat[4],cat[0], cat[1], cat[2], cat[3]);  
-    printLine2(b);  
-  }
+    if (cat[4] != 0xf7 && cat[4] != 0xbb && cat[4] != 0x03){
+      sprintf(b, "%d %02x %02x%02x%02x%02x", catCount, cat[4],cat[0], cat[1], cat[2], cat[3]);
+      printLine2(b);
+    }
   */
   processCATCommand2(cat);
   insideCat = 0;

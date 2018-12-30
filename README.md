@@ -25,25 +25,32 @@ If the second oscillator is at 33 Mhz, the oscilaltor is subtracated from the si
 We use this technique to switch sidebands. This is to avoid placing the lsbCarrier close to 12 MHz where its fifth harmonic beats with the arduino's 16 Mhz oscillator's fourth harmonic
 
 ### Harmonic Filters
-The four harmonic filters use only three relays. The four LPFs cover 30-21 Mhz, 18 - 14 Mhz, 7-10 MHz and 3.5 to 5 Mhz.
+The four harmonic filters use only three relays. The four LPFs cover 21–30 MHz, 14–18 MHz, 7–10 MHz and 3.5–5 MHz.
 
 Briefly, it works like this:
-- When KT1 is OFF, the 'off' position routes the PA output through the 30 MHz LPF
-- When KT1 is ON, it routes the PA output to KT2. Which is why you will see that the KT1 is on for the three other cases.
-- When the KT1 is ON and KT2 is off, the off position of KT2 routes the PA output to 18 MHz LPF (That also works for 14 Mhz)
-- When KT1 is On, KT2 is On, it routes the PA output to KT3
-- KT3, when switched on selects the 7-10 Mhz filter
-- KT3 when switched off selects the 3.5-5 Mhz filter
+- KT1, when switched OFF, routes the PA output to the 21–30 MHz filter
+- KT1, when switched ON, routes the PA output to KT2.
+- KT2, when switched OFF, routes the PA output to the 14–18 MHz filter
+- KT2, when switched ON, routes the PA output to KT3
+- KT3, when switched ON, routes the PA output to 7–10 Mhz filter
+- KT3, when switched OFF, routes the PA output to 3.5–5 Mhz filter
 
-See the circuit to understand this
+| KT1 | KT2 | KT3 | PA output routed to |
+|-----|-----|-----|---------------------|
+| OFF |     |     | 21–30 MHz filter    |
+| ON  |     |     | *KT2*               |
+| ON  | OFF |     | 14–18 MHz filter    |
+| ON  | ON  |     | *KT3*               |
+| ON  | ON  | OFF | 3.5–5 MHz filter    |
+| ON  | ON  | ON  | 7–10 MHz filter     |
 
 ### Display (LCD)
 
 The Raduino board is the size of a standard 16x2 LCD panel. It has three connectors:
 
-First, is an 8 pin connector that provides +5v, GND and six analog input pins that can also be configured to be used as digital input or output pins. These are referred to as A0,A1,A2,A3,A6 and A7 pins. The A4 and A5 pins are missing from this connector as they are used to talk to the Si5351 over I2C protocol.
+First, is an 8 pin connector that provides +5v, GND and six analog input pins that can also be configured to be used as digital input or output pins. These are referred to as `A0`, `A1`, `A2`, `A3`, `A6` and `A7` pins. The `A4` and `A5` pins are missing from this connector as they are used to talk to the Si5351 over I2C protocol.
 
-Second is a 16 pin LCD connector. This connector is meant specifically for the standard 16x2 LCD display in 4 bit mode. The 4 bit mode requires 4 data lines and two control lines to work: Lines used are : RESET, ENABLE, D4, D5, D6, D7
+Second is a 16 pin LCD connector. This connector is meant specifically for the standard 16x2 LCD display in 4 bit mode. The 4 bit mode requires 4 data lines and two control lines to work: Lines used are : `RESET`, `ENABLE`, `D4`, `D5`, `D6`, `D7`
 
 ### PINS
 
@@ -63,7 +70,7 @@ Pin 6 (Red),    A2, F BUTTON
 Pin 7 (Brown),  A1, ENC B
 Pin 8 (Black),  A0, ENC A
 ```
-Note: ```A5```, ```A4``` are wired to the Si5351 as I2C interface!
+Note: `A5`, `A4` are wired to the Si5351 as I2C interface!
 
 #### Bottom
 
