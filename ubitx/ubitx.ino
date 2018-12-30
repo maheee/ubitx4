@@ -1,21 +1,9 @@
-  /**
- * This source file is under General Public License version 3.
- */
-
 #include <Wire.h>
 #include <EEPROM.h>
 
+
 /**
- * The pins are assigned as follows (left to right, display facing you): 
- *      Pin 1 (Violet), A7, SPARE
- *      Pin 2 (Blue),   A6, KEYER (DATA)
- *      Pin 3 (Green), +5v 
- *      Pin 4 (Yellow), Gnd
- *      Pin 5 (Orange), A3, PTT
- *      Pin 6 (Red),    A2, F BUTTON
- *      Pin 7 (Brown),  A1, ENC B
- *      Pin 8 (Black),  A0, ENC A
- *Note: A5, A4 are wired to the Si5351 as I2C interface 
+ * Pin Setup
  */
 #define ENC_A (A0)
 #define ENC_B (A1)
@@ -24,12 +12,27 @@
 #define ANALOG_KEYER (A6)
 #define ANALOG_SPARE (A7)
 
+#define TX_RX (7)
+#define CW_TONE (6)
+#define TX_LPF_A (5)
+#define TX_LPF_B (4)
+#define TX_LPF_C (3)
+#define CW_KEY (2)
+
+#define LCD_RESET (8)
+#define LCD_ENABLE (9)
+#define LCD_D4 (10)
+#define LCD_D5 (11)
+#define LCD_D6 (12)
+#define LCD_D7 (13)
+
+
 /** 
- * The 4 bit mode of the LCD is used. It requires 4 data lines and two control lines to work.
+ * LCD Setup
  */
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(8,     9,      10, 11, 12, 13);
-//                RESET, ENABLE, D4, D5, D6, D7
+LiquidCrystal lcd(LCD_RESET, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+
 
 /**
  * Global buffers as  kitchen counters where we can slice and dice our strings. These strings are mostly used to control the display or handle
@@ -40,25 +43,9 @@ char c[30], b[30];
 char printBuff[2][31];  //mirrors what is showing on the two lines of the display
 int count = 0;          //to generally count ticks, loops, etc
 
-/** 
- *  The second set of 16 pins on the Raduino's bottom connector are have the three clock outputs and the digital lines to control the rig.
- *  This assignment is as follows :
- *    Pin   1   2    3    4    5    6    7    8    9    10   11   12   13   14   15   16
- *         GND +5V CLK0  GND  GND  CLK1 GND  GND  CLK2  GND  D2   D3   D4   D5   D6   D7  
- *  These too are flexible with what you may do with them, for the Raduino, we use them to :
- *  - TX_RX line : Switches between Transmit and Receive after sensing the PTT or the morse keyer
- *  - CW_KEY line : turns on the carrier for CW
- */
-
-#define TX_RX (7)
-#define CW_TONE (6)
-#define TX_LPF_A (5)
-#define TX_LPF_B (4)
-#define TX_LPF_C (3)
-#define CW_KEY (2)
 
 /**
- * These are the indices where these user changable settings are stored in the EEPROM
+ * EEPROM storage offsets
  */
 #define MASTER_CAL 0
 #define LSB_CAL 4
@@ -82,15 +69,14 @@ int count = 0;          //to generally count ticks, loops, etc
 // handkey, iambic a, iambic b : 0,1,2f
 #define CW_KEY_TYPE 358
 
+
 /**
  * Oscillator Setup
  */
-
 // the second oscillator should ideally be at 57 MHz, however, the crystal filter's center frequency 
 // is shifted down a little due to the loading from the impedance matching L-networks on either sides
 #define SECOND_OSC_USB (56995000l)
 #define SECOND_OSC_LSB (32995000l) 
- 
 
 //these are the two default USB and LSB frequencies. The best frequencies depend upon your individual taste and filter shape
 #define INIT_USB_FREQ   (11996500l)
@@ -121,20 +107,21 @@ unsigned char keyerControl = IAMBICB;
 
 
 /**
- * Raduino needs to keep track of current state of the transceiver. These are a few variables that do it
+ * Transceiver state variables
  */
-boolean txCAT = false;        //turned on if the transmitting due to a CAT command
-char inTx = 0;                //it is set to 1 if in transmit mode (whatever the reason : cw, ptt or cat)
-char splitOn = 0;             //working split, uses VFO B as the transmit frequency, (NOT IMPLEMENTED YET)
-char keyDown = 0;             //in cw mode, denotes the carrier is being transmitted
-char isUSB = 0;               //upper sideband was selected, this is reset to the default for the 
-                              //frequency when it crosses the frequency border of 10 MHz
-byte menuOn = 0;              //set to 1 when the menu is being displayed, if a menu item sets it to zero, the menu is exited
-unsigned long cwTimeout = 0;  //milliseconds to go before the cw transmit line is released and the radio goes back to rx mode
-unsigned long dbgCount = 0;   //not used now
-unsigned char txFilter = 0;   //which of the four transmit filters are in use
-boolean modeCalibrate = false;//this mode of menus shows extended menus to calibrate the oscillators and choose the proper
-                              //beat frequency
+boolean txCAT = false;        // turned on if the transmitting due to a CAT command
+char inTx = 0;                // it is set to 1 if in transmit mode (whatever the reason : cw, ptt or cat)
+char splitOn = 0;             // working split, uses VFO B as the transmit frequency, (NOT IMPLEMENTED YET)
+char keyDown = 0;             // in cw mode, denotes the carrier is being transmitted
+char isUSB = 0;               // upper sideband was selected, this is reset to the default for the 
+                              // frequency when it crosses the frequency border of 10 MHz
+byte menuOn = 0;              // set to 1 when the menu is being displayed, if a menu item sets it to zero, the menu is exited
+unsigned long cwTimeout = 0;  // milliseconds to go before the cw transmit line is released and the radio goes back to rx mode
+unsigned long dbgCount = 0;   // not used now
+unsigned char txFilter = 0;   // which of the four transmit filters are in use
+boolean modeCalibrate = false;// this mode of menus shows extended menus to calibrate the oscillators and choose the proper
+                              // beat frequency
+
 
 /**
  * Our own delay. During any delay, the raduino should still be processing a few times. 
@@ -143,10 +130,11 @@ void active_delay(int delay_by){
   unsigned long timeStart = millis();
 
   while (millis() - timeStart <= delay_by) {
-      //Background Work      
+    //Background Work      
     checkCAT();
   }
 }
+
 
 /**
  * Select the properly tx harmonic filters
@@ -158,7 +146,7 @@ void setTXFilters(unsigned long freq){
     digitalWrite(TX_LPF_B, 0);
     digitalWrite(TX_LPF_C, 0);
   }
-  else if (freq >= 14000000L){ //thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
+  else if (freq >= 14000000L){ // thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
     digitalWrite(TX_LPF_A, 1);
     digitalWrite(TX_LPF_B, 0);
     digitalWrite(TX_LPF_C, 0);
@@ -171,16 +159,13 @@ void setTXFilters(unsigned long freq){
   else {
     digitalWrite(TX_LPF_A, 1);
     digitalWrite(TX_LPF_B, 1);
-    digitalWrite(TX_LPF_C, 1);    
+    digitalWrite(TX_LPF_C, 1);
   }
 }
 
+
 /**
- * This is the most frequently called function that configures the 
- * radio to a particular frequeny, sideband and sets up the transmit filters
- * 
- * The transmit filter relays are powered up only during the tx so they dont
- * draw any current during rx. 
+ * Configure the radio to a particular frequeny, sideband and set up the transmit filters
  * 
  * The carrier oscillator of the detector/modulator is permanently fixed at
  * uppper sideband. The sideband selection is done by placing the second oscillator
@@ -188,8 +173,6 @@ void setTXFilters(unsigned long freq){
  * through mixing of the second local oscillator.
  */
 void setFrequency(unsigned long f){
-  uint64_t osc_f, firstOscillator, secondOscillator;
- 
   setTXFilters(f);
 
   if (isUSB){
@@ -204,6 +187,7 @@ void setFrequency(unsigned long f){
   frequency = f;
 }
 
+
 /**
  * startTx is called by the PTT, cw keyer and CAT protocol to
  * put the uBitx in tx mode. It takes care of rit settings, sideband settings
@@ -212,7 +196,7 @@ void setFrequency(unsigned long f){
  */
 void startTx(byte txMode){
   unsigned long tx_freq = 0;  
-    
+
   digitalWrite(TX_RX, 1);
   inTx = 1;
   
@@ -280,6 +264,7 @@ void stopTx(){
   }
   updateDisplay();
 }
+
 
 /**
  * ritEnable is called with a frequency parameter that determines
@@ -360,7 +345,7 @@ void doTuning(){
     if (s > 4)
       frequency += 10000l;
     else if (s > 2)
-      frequency += 500;
+      frequency += 500l;
     else if (s > 0)
       frequency +=  50l;
     else if (s > -2)
@@ -381,6 +366,7 @@ void doTuning(){
   }
 }
 
+
 /**
  * RIT only steps back and forth by 100 hz at a time
  */
@@ -400,6 +386,7 @@ void doRIT(){
     updateDisplay();
   }
 }
+
 
 /**
  * The settings are read from EEPROM. The first time around, the values may not be 
@@ -483,11 +470,10 @@ void initSettings(){
     Iambic_Key = true;
     keyerControl |= IAMBICB;
   }
-  
 }
 
-void initPorts(){
 
+void initPorts(){
   analogReference(DEFAULT);
 
   //??
@@ -519,8 +505,8 @@ void initPorts(){
   digitalWrite(CW_KEY, 0);
 }
 
-void setup()
-{
+
+void setup() {
   Serial.begin(38400);
   Serial.flush();  
   lcd.begin(16, 2);
@@ -547,7 +533,6 @@ void setup()
 /**
  * The loop checks for keydown, ptt, function button and tuning.
  */
-
 byte flasher = 0;
 void loop(){ 
   
@@ -567,3 +552,4 @@ void loop(){
   //we check CAT after the encoder as it might put the radio into TX
   checkCAT();
 }
+
