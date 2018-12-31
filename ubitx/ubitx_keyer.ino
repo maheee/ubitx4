@@ -33,12 +33,8 @@ int cwAdcDotFrom = 301;
 int cwAdcDotTo = 600;
 int cwAdcDashFrom = 601;
 int cwAdcDashTo = 800;
-//byte cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
 
 byte delayBeforeCWStartTime = 50;
-
-
-
 
 // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
 //#define CW_TIMEOUT (600l)   //Change to CW Delaytime for value save to eeprom
@@ -52,9 +48,19 @@ byte delayBeforeCWStartTime = 50;
 //when both are simultaneously pressed
 char lastPaddle = 0;
 
+#define DIT_L 0x01 // DIT latch
+#define DAH_L 0x02 // DAH latch
+#define DIT_PROC 0x04 // DIT is being processed
+#define PDLSWAP 0x08 // 0 for normal, 1 for swap
+#define IAMBICB 0x10 // 0 for Iambic A, 1 for Iambic B
+enum KSTYPE {IDLE, CHK_DIT, CHK_DAH, KEYED_PREP, KEYED, INTER_ELEMENT };
+static unsigned long ktimer;
+unsigned char keyerState = IDLE;
+
+
 //reads the analog keyer pin and reports the paddle
 byte getPaddle() {
-  int paddle = analogRead(ANALOG_KEYER);
+  int paddle = analogRead(PIN_ANALOG_KEYER);
 
   if (paddle > 800)         // above 4v is up
     return 0;
@@ -76,11 +82,9 @@ byte getPaddle() {
 */
 void cwKeydown() {
   keyDown = 1;                  //tracks the CW_KEY
-  tone(CW_TONE, (int)sideTone);
-  digitalWrite(CW_KEY, 1);
+  tone(PIN_CW_TONE, (int)sideTone);
+  digitalWrite(PIN_CW_KEY, 1);
 
-  //Modified by KD8CEC, for CW Delay Time save to eeprom
-  //cwTimeout = millis() + CW_TIMEOUT;
   cwTimeout = millis() + cwDelayTime * 10;
 }
 
@@ -90,33 +94,19 @@ void cwKeydown() {
 */
 void cwKeyUp() {
   keyDown = 0;    //tracks the CW_KEY
-  noTone(CW_TONE);
-  digitalWrite(CW_KEY, 0);
+  noTone(PIN_CW_TONE);
+  digitalWrite(PIN_CW_KEY, 0);
 
   //Modified by KD8CEC, for CW Delay Time save to eeprom
   //cwTimeout = millis() + CW_TIMEOUT;
   cwTimeout = millis() + cwDelayTime * 10;
 }
 
-//Variables for Ron's new logic
-#define DIT_L 0x01 // DIT latch
-#define DAH_L 0x02 // DAH latch
-#define DIT_PROC 0x04 // DIT is being processed
-#define PDLSWAP 0x08 // 0 for normal, 1 for swap
-#define IAMBICB 0x10 // 0 for Iambic A, 1 for Iambic B
-enum KSTYPE {IDLE, CHK_DIT, CHK_DAH, KEYED_PREP, KEYED, INTER_ELEMENT };
-static unsigned long ktimer;
-unsigned char keyerState = IDLE;
-
 //Below is a test to reduce the keying error. do not delete lines
-//create by KD8CEC for compatible with new CW Logic
 char update_PaddleLatch(byte isUpdateKeyState) {
   unsigned char tmpKeyerControl = 0;
 
-  int paddle = analogRead(ANALOG_KEYER);
-  //diagnostic, VU2ESE
-  //itoa(paddle, b, 10);
-  //printLine2(b);
+  int paddle = analogRead(PIN_ANALOG_KEYER);
 
   if (paddle >= cwAdcDashFrom && paddle <= cwAdcDashTo)
     tmpKeyerControl |= DAH_L;
@@ -140,10 +130,6 @@ char update_PaddleLatch(byte isUpdateKeyState) {
   return tmpKeyerControl;
 }
 
-/*****************************************************************************
-  // New logic, by RON
-  // modified by KD8CEC
-******************************************************************************/
 void cwKeyer(void) {
   lastPaddle = 0;
   bool continue_loop = true;
@@ -187,7 +173,6 @@ void cwKeyer(void) {
           break;
 
         case KEYED_PREP:
-          //modified KD8CEC
           if (!inTx) {
             //DelayTime Option
             active_delay(delayBeforeCWStartTime * 2);
@@ -222,14 +207,14 @@ void cwKeyer(void) {
               keyerState = CHK_DAH; // dit done, check for dah
             } else {
               keyerControl &= ~(DAH_L); // clear dah latch
-              keyerState = IDLE; // go idle
+              keyerState = IDLE;
             }
           }
           break;
       }
 
       checkCAT();
-    } //end of while
+    }
   }
   else {
     while (1) {
@@ -256,19 +241,12 @@ void cwKeyer(void) {
           keyDown = 0;
           stopTx();
         }
-        //if (!cwTimeout) //removed by KD8CEC
-        //   return;
-        // got back to the beginning of the loop, if no further activity happens on straight key
-        // we will time out, and return out of this routine
-        //delay(5);
-        //delay_background(5, 3); //removed by KD8CEC
-        //continue;               //removed by KD8CEC
-        return;                   //Tx stop control by Main Loop
+        return;
       }
 
       checkCAT();
-    } //end of while
-  }   //end of elese
+    }
+  }
 }
 
 

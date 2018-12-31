@@ -16,33 +16,35 @@
 /**
     Pin Setup
 */
-#define ENC_A (A0)
-#define ENC_B (A1)
-#define FBUTTON (A2)
-#define PTT   (A3)
-#define ANALOG_KEYER (A6)
-#define ANALOG_SPARE (A7)
+#define PIN_ENC_A (A0)
+#define PIN_ENC_B (A1)
+#define PIN_FUNC_FBUTTON (A2)
+#define PIN_PTT   (A3)
+// A4 ->  Si5351 as I2C
+// A5 ->  Si5351 as I2C
+#define PIN_ANALOG_KEYER (A6)
+// A7 -> unused
 
-#define TX_RX (7)
-#define CW_TONE (6)
-#define TX_LPF_A (5)
-#define TX_LPF_B (4)
-#define TX_LPF_C (3)
-#define CW_KEY (2)
+#define PIN_TX_RX (7)
+#define PIN_CW_TONE (6)
+#define PIN_TX_LPF_A (5)
+#define PIN_TX_LPF_B (4)
+#define PIN_TX_LPF_C (3)
+#define PIN_CW_KEY (2)
 
-#define LCD_RESET (8)
-#define LCD_ENABLE (9)
-#define LCD_D4 (10)
-#define LCD_D5 (11)
-#define LCD_D6 (12)
-#define LCD_D7 (13)
+#define PIN_LCD_RESET (8)
+#define PIN_LCD_ENABLE (9)
+#define PIN_LCD_D4 (10)
+#define PIN_LCD_D5 (11)
+#define PIN_LCD_D6 (12)
+#define PIN_LCD_D7 (13)
 
 
 /**
    LCD Setup
 */
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(LCD_RESET, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+LiquidCrystal lcd(PIN_LCD_RESET, PIN_LCD_ENABLE, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
 
 
 /**
@@ -58,27 +60,26 @@ int count = 0;          //to generally count ticks, loops, etc
 /**
    EEPROM storage offsets
 */
-#define MASTER_CAL 0
-#define LSB_CAL 4
-#define USB_CAL 8
-#define SIDE_TONE 12
-//these are ids of the vfos as well as their offset into the eeprom storage, don't change these 'magic' values
-#define VFO_A 16
-#define VFO_B 20
+#define MASTER_CAL   0
+#define LSB_CAL      4
+#define USB_CAL      8
+#define SIDE_TONE   12
+#define VFO_A       16
+#define VFO_B       20
 #define CW_SIDETONE 24
-#define CW_SPEED 28
+#define CW_SPEED    28
 
 // These are defines for the new features back-ported from KD8CEC's software
 // these start from beyond 256 as Ian, KD8CEC has kept the first 256 bytes free for the base version
-#define VFO_A_MODE  256 // 2: LSB, 3: USB
-#define VFO_B_MODE  257
+#define VFO_A_MODE 256 // 2: LSB, 3: USB
+#define VFO_B_MODE 257
 
-//values that are stroed for the VFO modes
+//values that are stored for the VFO modes
 #define VFO_MODE_LSB 2
 #define VFO_MODE_USB 3
 
 // handkey, iambic a, iambic b : 0,1,2f
-#define CW_KEY_TYPE 358
+#define PIN_CW_KEY_TYPE 358
 
 
 /**
@@ -90,10 +91,10 @@ int count = 0;          //to generally count ticks, loops, etc
 #define SECOND_OSC_LSB (32995000l)
 
 //these are the two default USB and LSB frequencies. The best frequencies depend upon your individual taste and filter shape
-#define INIT_USB_FREQ   (11996500l)
+#define INIT_USB_FREQ (11996500l)
 // limits the tuning and working range of the ubitx between 3 MHz and 30 MHz
-#define LOWEST_FREQ   (100000l)
-#define HIGHEST_FREQ (30000000l)
+#define LOWEST_FREQ     (100000l)
+#define HIGHEST_FREQ  (30000000l)
 
 //we directly generate the CW by programmin the Si5351 to the cw tx frequency, hence, both are different modes
 //these are the parameter passed to startTx
@@ -124,14 +125,12 @@ boolean txCAT = false;        // turned on if the transmitting due to a CAT comm
 char inTx = 0;                // it is set to 1 if in transmit mode (whatever the reason : cw, ptt or cat)
 char splitOn = 0;             // working split, uses VFO B as the transmit frequency, (NOT IMPLEMENTED YET)
 char keyDown = 0;             // in cw mode, denotes the carrier is being transmitted
-char isUSB = 0;               // upper sideband was selected, this is reset to the default for the
-// frequency when it crosses the frequency border of 10 MHz
+char isUSB = 0;               // upper sideband was selected, this is reset to the default for the frequency when it crosses the frequency border of 10 MHz
 byte menuOn = 0;              // set to 1 when the menu is being displayed, if a menu item sets it to zero, the menu is exited
 unsigned long cwTimeout = 0;  // milliseconds to go before the cw transmit line is released and the radio goes back to rx mode
 unsigned long dbgCount = 0;   // not used now
 unsigned char txFilter = 0;   // which of the four transmit filters are in use
-boolean modeCalibrate = false;// this mode of menus shows extended menus to calibrate the oscillators and choose the proper
-// beat frequency
+boolean modeCalibrate = false;// this mode of menus shows extended menus to calibrate the oscillators and choose the proper beat frequency
 
 
 /**
@@ -144,137 +143,6 @@ void active_delay(int delay_by) {
     //Background Work
     checkCAT();
   }
-}
-
-
-/**
-   Select the properly tx harmonic filters
-
-   LPF_A -> KT1 -> OFF = 21-30 MHz, ON = LPF_B
-   LPF_B -> KT2 -> OFF = 14-18 MHz, ON = LPF_C
-   LPF_C -> KT3 -> OFF = 3.5-5 MHz, ON = 7-10 MHz
-*/
-void setTXFilters(unsigned long freq) {
-
-  if (freq > 21000000L) {
-    digitalWrite(TX_LPF_A, 0);
-    digitalWrite(TX_LPF_B, 0);
-    digitalWrite(TX_LPF_C, 0);
-  } else if (freq >= 14000000L) {
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 0);
-    digitalWrite(TX_LPF_C, 0);
-  } else if (freq > 7000000L) {
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 1);
-    digitalWrite(TX_LPF_C, 0);
-  } else {
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 1);
-    digitalWrite(TX_LPF_C, 1);
-  }
-}
-
-
-/**
-   Configure the radio to a particular frequeny, sideband and set up the transmit filters
-
-   The carrier oscillator of the detector/modulator is permanently fixed at
-   uppper sideband. The sideband selection is done by placing the second oscillator
-   either 12 Mhz below or above the 45 Mhz signal thereby inverting the sidebands
-   through mixing of the second local oscillator.
-*/
-void setFrequency(unsigned long f) {
-  setTXFilters(f);
-
-  if (isUSB) {
-    si5351bx_setfreq(2, firstIF  + f);
-    si5351bx_setfreq(1, firstIF + usbCarrier);
-  }
-  else {
-    si5351bx_setfreq(2, firstIF + f);
-    si5351bx_setfreq(1, firstIF - usbCarrier);
-  }
-
-  frequency = f;
-}
-
-
-/**
-   startTx is called by the PTT, cw keyer and CAT protocol to
-   put the uBitx in tx mode. It takes care of rit settings, sideband settings
-   Note: In cw mode, doesnt key the radio, only puts it in tx mode
-   CW offest is calculated as lower than the operating frequency when in LSB mode, and vice versa in USB mode
-*/
-void startTx(byte txMode) {
-  unsigned long tx_freq = 0;
-
-  digitalWrite(TX_RX, 1);
-  inTx = 1;
-
-  if (ritOn) {
-    //save the current as the rx frequency
-    ritRxFrequency = frequency;
-    setFrequency(ritTxFrequency);
-  }
-  else
-  {
-    if (splitOn == 1) {
-      if (vfoActive == VFO_B) {
-        vfoActive = VFO_A;
-        isUSB = isUsbVfoA;
-        frequency = vfoA;
-      }
-      else if (vfoActive == VFO_A) {
-        vfoActive = VFO_B;
-        frequency = vfoB;
-        isUSB = isUsbVfoB;
-      }
-    }
-    setFrequency(frequency);
-  }
-
-  if (txMode == TX_CW) {
-    //turn off the second local oscillator and the bfo
-    si5351bx_setfreq(0, 0);
-    si5351bx_setfreq(1, 0);
-
-    //shif the first oscillator to the tx frequency directly
-    //the key up and key down will toggle the carrier unbalancing
-    //the exact cw frequency is the tuned frequency + sidetone
-    if (isUSB)
-      si5351bx_setfreq(2, frequency + sideTone);
-    else
-      si5351bx_setfreq(2, frequency - sideTone);
-  }
-  updateDisplay();
-}
-
-void stopTx() {
-  inTx = 0;
-
-  digitalWrite(TX_RX, 0);           //turn off the tx
-  si5351bx_setfreq(0, usbCarrier);  //set back the cardrier oscillator anyway, cw tx switches it off
-
-  if (ritOn)
-    setFrequency(ritRxFrequency);
-  else {
-    if (splitOn == 1) {
-      //vfo Change
-      if (vfoActive == VFO_B) {
-        vfoActive = VFO_A;
-        frequency = vfoA;
-        isUSB = isUsbVfoA;
-      }
-      else if (vfoActive == VFO_A) {
-        vfoActive = VFO_B;
-        frequency = vfoB;
-        isUSB = isUsbVfoB;
-      }
-    }
-    setFrequency(frequency);
-  }
-  updateDisplay();
 }
 
 
@@ -313,12 +181,12 @@ void checkPTT() {
   if (cwTimeout > 0)
     return;
 
-  if (digitalRead(PTT) == 0 && inTx == 0) {
+  if (digitalRead(PIN_PTT) == 0 && inTx == 0) {
     startTx(TX_SSB);
     active_delay(50); //debounce the PTT
   }
 
-  if (digitalRead(PTT) == 1 && inTx == 1)
+  if (digitalRead(PIN_PTT) == 1 && inTx == 1)
     stopTx();
 }
 
@@ -428,11 +296,7 @@ void initSettings() {
   if (cwSpeed < 10 || 1000 < cwSpeed)
     cwSpeed = 100;
 
-  /*
-     The VFO modes are read in as either 2 (USB) or 3(LSB), 0, the default
-     is taken as 'uninitialized
-  */
-
+  //The VFO modes are read in as either 2 (USB) or 3(LSB), 0, the default is taken as 'uninitialized
   EEPROM.get(VFO_A_MODE, x);
 
   switch (x) {
@@ -467,10 +331,8 @@ void initSettings() {
   //set the current mode
   isUSB = isUsbVfoA;
 
-  /*
-     The keyer type splits into two variables
-  */
-  EEPROM.get(CW_KEY_TYPE, x);
+  //The keyer type splits into two variables
+  EEPROM.get(PIN_CW_KEY_TYPE, x);
 
   if (x == 0)
     Iambic_Key = false;
@@ -489,32 +351,32 @@ void initPorts() {
   analogReference(DEFAULT);
 
   //??
-  pinMode(ENC_A, INPUT_PULLUP);
-  pinMode(ENC_B, INPUT_PULLUP);
-  pinMode(FBUTTON, INPUT_PULLUP);
+  pinMode(PIN_ENC_A, INPUT_PULLUP);
+  pinMode(PIN_ENC_B, INPUT_PULLUP);
+  pinMode(PIN_FUNC_FBUTTON, INPUT_PULLUP);
 
   //configure the function button to use the external pull-up
-  //  pinMode(FBUTTON, INPUT);
-  //  digitalWrite(FBUTTON, HIGH);
+  //  pinMode(PIN_FUNC_FBUTTON, INPUT);
+  //  digitalWrite(PIN_FUNC_FBUTTON, HIGH);
 
-  pinMode(PTT, INPUT_PULLUP);
-  pinMode(ANALOG_KEYER, INPUT_PULLUP);
+  pinMode(PIN_PTT, INPUT_PULLUP);
+  pinMode(PIN_ANALOG_KEYER, INPUT_PULLUP);
 
-  pinMode(CW_TONE, OUTPUT);
-  digitalWrite(CW_TONE, 0);
+  pinMode(PIN_CW_TONE, OUTPUT);
+  digitalWrite(PIN_CW_TONE, 0);
 
-  pinMode(TX_RX, OUTPUT);
-  digitalWrite(TX_RX, 0);
+  pinMode(PIN_TX_RX, OUTPUT);
+  digitalWrite(PIN_TX_RX, 0);
 
-  pinMode(TX_LPF_A, OUTPUT);
-  pinMode(TX_LPF_B, OUTPUT);
-  pinMode(TX_LPF_C, OUTPUT);
-  digitalWrite(TX_LPF_A, 0);
-  digitalWrite(TX_LPF_B, 0);
-  digitalWrite(TX_LPF_C, 0);
+  pinMode(PIN_TX_LPF_A, OUTPUT);
+  pinMode(PIN_TX_LPF_B, OUTPUT);
+  pinMode(PIN_TX_LPF_C, OUTPUT);
+  digitalWrite(PIN_TX_LPF_A, 0);
+  digitalWrite(PIN_TX_LPF_B, 0);
+  digitalWrite(PIN_TX_LPF_C, 0);
 
-  pinMode(CW_KEY, OUTPUT);
-  digitalWrite(CW_KEY, 0);
+  pinMode(PIN_CW_KEY, OUTPUT);
+  digitalWrite(PIN_CW_KEY, 0);
 }
 
 
@@ -545,9 +407,7 @@ void setup() {
 /**
    The loop checks for keydown, ptt, function button and tuning.
 */
-byte flasher = 0;
 void loop() {
-
   cwKeyer();
   if (!txCAT)
     checkPTT();

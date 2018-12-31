@@ -60,7 +60,6 @@ void i2cWriten(uint8_t reg, uint8_t *vals, uint8_t vcnt) {  // write array
   Wire.endTransmission();
 }
 
-
 void si5351bx_init() {                  // Call once at power-up, start PLLA
   uint8_t reg;  uint32_t msxp1;
   Wire.begin();

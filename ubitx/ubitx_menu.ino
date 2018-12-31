@@ -11,6 +11,10 @@
     - If the menu item is NOT clicked on, then the menu's prompt is to be displayed
 */
 
+//this is used by the si5351 routines in the ubitx_5351 file
+extern int32_t calibration;
+extern uint32_t si5351bx_vcoa;
+
 
 /** A generic control to read variable values
 */
@@ -32,7 +36,7 @@ int getValueByKnob(int minimum, int maximum, int step_size,  int initial, char* 
   printLine2(b);
   active_delay(300);
 
-  while (!btnDown() && digitalRead(PTT) == HIGH) {
+  while (!btnDown() && digitalRead(PIN_PTT) == HIGH) {
 
     knob = enc_read();
     if (knob != 0) {
@@ -317,10 +321,6 @@ int menuSetup(int btn) {
   return 0;
 }
 
-//this is used by the si5351 routines in the ubitx_5351 file
-extern int32_t calibration;
-extern uint32_t si5351bx_vcoa;
-
 int calibrateClock() {
   int knob = 0;
   int32_t prev_calibration;
@@ -331,9 +331,9 @@ int calibrateClock() {
     active_delay(100);
   active_delay(100);
 
-  digitalWrite(TX_LPF_A, 0);
-  digitalWrite(TX_LPF_B, 0);
-  digitalWrite(TX_LPF_C, 0);
+  digitalWrite(PIN_TX_LPF_A, 0);
+  digitalWrite(PIN_TX_LPF_B, 0);
+  digitalWrite(PIN_TX_LPF_C, 0);
 
   prev_calibration = calibration;
   calibration = 0;
@@ -353,9 +353,9 @@ int calibrateClock() {
   while (!btnDown())
   {
 
-    if (digitalRead(PTT) == LOW && !keyDown)
+    if (digitalRead(PIN_PTT) == LOW && !keyDown)
       cwKeydown();
-    if (digitalRead(PTT)  == HIGH && keyDown)
+    if (digitalRead(PIN_PTT)  == HIGH && keyDown)
       cwKeyUp();
 
     knob = enc_read();
@@ -479,10 +479,10 @@ void menuSetupCwTone(int btn) {
   printLineF1(F("Tune CW tone"));
   printLineF2(F("PTT to confirm. "));
   active_delay(1000);
-  tone(CW_TONE, sideTone);
+  tone(PIN_CW_TONE, sideTone);
 
   //disable all clock 1 and clock 2
-  while (digitalRead(PTT) == HIGH && !btnDown())
+  while (digitalRead(PIN_PTT) == HIGH && !btnDown())
   {
     knob = enc_read();
 
@@ -493,16 +493,16 @@ void menuSetupCwTone(int btn) {
     else
       continue; //don't update the frequency or the display
 
-    tone(CW_TONE, sideTone);
+    tone(PIN_CW_TONE, sideTone);
     itoa(sideTone, b, 10);
     printLine2(b);
 
     checkCAT();
     active_delay(20);
   }
-  noTone(CW_TONE);
+  noTone(PIN_CW_TONE);
   //save the setting
-  if (digitalRead(PTT) == LOW) {
+  if (digitalRead(PIN_PTT) == LOW) {
     printLineF2(F("Sidetone set!    "));
     EEPROM.put(CW_SIDETONE, sideTone);
     active_delay(2000);
@@ -588,7 +588,7 @@ void menuSetupKeyer(int btn) {
     keyerControl |= IAMBICB;
   }
 
-  EEPROM.put(CW_KEY_TYPE, tmp_key);
+  EEPROM.put(PIN_CW_KEY_TYPE, tmp_key);
 
   printLineF1(F("Keyer Set!"));
   active_delay(600);
@@ -610,7 +610,7 @@ void menuReadADC(int btn) {
   delay(500);
 
   while (!btnDown()) {
-    adc = analogRead(ANALOG_KEYER);
+    adc = analogRead(PIN_ANALOG_KEYER);
     itoa(adc, b, 10);
     printLine1(b);
   }

@@ -1,4 +1,3 @@
-
 /**
    This procedure is only for those who have a signal generator/transceiver tuned to exactly 7.150 and a dummy load
 */
@@ -17,10 +16,8 @@ void btnWaitForClick() {
    If we divide it by 875, we will get 1 mhz signal
    So, if the vco is shifted up by 875 hz, the generated frequency of 1 mhz is shifted by 1 hz (875/875)
    At 12 Mhz, the carrier will needed to be shifted down by 12 hz for every 875 hz of shift up of the vco
-
 */
 void factory_alignment() {
-
   calibrateClock();
 
   if (calibration == 0) {
@@ -31,7 +28,7 @@ void factory_alignment() {
   //move it away to 7.160 for an LSB signal
   setFrequency(7170000l);
   updateDisplay();
-  printLineF2(F("#2 BFO"));
+  printLineF2(F("#2:BFO"));
   active_delay(1000);
 
   usbCarrier = 11994999l;
@@ -89,6 +86,5 @@ void factory_alignment() {
   isUSB = false;
   setFrequency(7150000l);
   updateDisplay();
-
 }
 
