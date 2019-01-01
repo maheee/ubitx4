@@ -1,5 +1,3 @@
-int enc_prev_state = 3;
-
 /**
    The A7 And A6 are purely analog lines on the Arduino Nano
    These need to be pulled up externally using two 10 K resistors
@@ -21,43 +19,79 @@ int btnDown() {
     return 1;
 }
 
+int funcButtonState() {
+  static int buttonState = HIGH;
+  static int lastButtonState = HIGH;
+  static unsigned long lastDebounceTime = 0;
+  static unsigned long debounceDelay = 50;
+
+  int reading = digitalRead(PIN_FUNC_FBUTTON);
+
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
+    }
+  }
+
+  lastButtonState = reading;
+
+  return buttonState == HIGH ? 0 : 1;
+}
+
+void waitForFuncButtonUp() {
+  while (funcButtonState() == 1) {
+    active_delay(50);
+  }
+}
+
 byte enc_state (void) {
-  return (analogRead(PIN_ENC_A) > 500 ? 1 : 0) + (analogRead(PIN_ENC_B) > 500 ? 2 : 0);
+  // 0 none
+  // 1 A
+  // 2 B
+  // 3 both
+  return
+    (analogRead(PIN_ENC_A) > 500 ? 1 : 0) +
+    (analogRead(PIN_ENC_B) > 500 ? 2 : 0);
 }
 
 int enc_read(void) {
+  static byte prevState = 0;
+  byte newState = prevState;
+
+  unsigned long stop_by = millis() + 50;
   int result = 0;
-  byte newState;
-  int enc_speed = 0;
 
-  long stop_by = millis() + 50;
+  while (millis() < stop_by) {
+    prevState = newState;
+    newState = enc_state();
 
-  while (millis() < stop_by) { // check if the previous state was stable
-    newState = enc_state(); // Get current state
-
-    if (newState != enc_prev_state)
-      delay (1);
-
-    if (enc_state() != newState || newState == enc_prev_state)
+    if (newState == prevState) {
+      active_delay(1);
       continue;
+    }
+
     //these transitions point to the encoder being rotated anti-clockwise
-    if ((enc_prev_state == 0 && newState == 2) ||
-        (enc_prev_state == 2 && newState == 3) ||
-        (enc_prev_state == 3 && newState == 1) ||
-        (enc_prev_state == 1 && newState == 0)) {
+    if ((prevState == 0 && newState == 2) ||
+        (prevState == 2 && newState == 3) ||
+        (prevState == 3 && newState == 1) ||
+        (prevState == 1 && newState == 0)) {
       result--;
     }
     //these transitions point o the enccoder being rotated clockwise
-    if ((enc_prev_state == 0 && newState == 1) ||
-        (enc_prev_state == 1 && newState == 3) ||
-        (enc_prev_state == 3 && newState == 2) ||
-        (enc_prev_state == 2 && newState == 0)) {
+    if ((prevState == 0 && newState == 1) ||
+        (prevState == 1 && newState == 3) ||
+        (prevState == 3 && newState == 2) ||
+        (prevState == 2 && newState == 0)) {
       result++;
     }
-    enc_prev_state = newState; // Record state for next pulse interpretation
-    enc_speed++;
-    active_delay(1);
   }
-  return (result);
+#ifdef ENC_SPEED_MULTIPLIER
+  result *= ENC_SPEED_MULTIPLIER;
+#endif
+  return result;
 }
 

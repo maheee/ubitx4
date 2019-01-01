@@ -319,7 +319,7 @@ void processCATCommand2(byte* cmd) {
     case 0x81:
       //toggle the VFOs
       response[0] = 0;
-      menuVfoToggle(1); // '1' forces it to change the VFO
+      menuVfo_toggle(); // '1' forces it to change the VFO
       Serial.write(response, 1);
       updateDisplay();
       break;
@@ -366,6 +366,9 @@ void processCATCommand2(byte* cmd) {
 }
 
 void checkCAT() {
+#ifdef DISABLE_CAT
+  return;
+#endif
   byte i;
 
   //Check Serial Port Buffer
@@ -402,5 +405,4 @@ void checkCAT() {
   processCATCommand2(cat);
   insideCat = 0;
 }
-
 

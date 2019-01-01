@@ -1,6 +1,14 @@
 #include <Wire.h>
 #include <EEPROM.h>
 
+/**
+   Switches for testing
+   should all be commented out when building for prod
+*/
+// #define DISABLE_CAT
+// #define DISABLE_KEYER
+// #define ENC_SPEED_MULTIPLIER 2
+
 
 /**
    Helper
@@ -126,7 +134,6 @@ char inTx = 0;                // it is set to 1 if in transmit mode (whatever th
 char splitOn = 0;             // working split, uses VFO B as the transmit frequency, (NOT IMPLEMENTED YET)
 char keyDown = 0;             // in cw mode, denotes the carrier is being transmitted
 char isUSB = 0;               // upper sideband was selected, this is reset to the default for the frequency when it crosses the frequency border of 10 MHz
-byte menuOn = 0;              // set to 1 when the menu is being displayed, if a menu item sets it to zero, the menu is exited
 unsigned long cwTimeout = 0;  // milliseconds to go before the cw transmit line is released and the radio goes back to rx mode
 unsigned long dbgCount = 0;   // not used now
 unsigned char txFilter = 0;   // which of the four transmit filters are in use
@@ -140,8 +147,8 @@ void active_delay(int delay_by) {
   unsigned long timeStart = millis();
 
   while (millis() - timeStart <= delay_by) {
-    //Background Work
     checkCAT();
+    delay(1);
   }
 }
 
@@ -379,6 +386,9 @@ void initPorts() {
   digitalWrite(PIN_CW_KEY, 0);
 }
 
+void printHeader() {
+  printLineF2(F("uBITX v4.?"));
+}
 
 void setup() {
   Serial.begin(38400);
@@ -387,8 +397,7 @@ void setup() {
 
   //we print this line so this shows up even if the raduino
   //crashes later in the code
-  printLineF2(F("uBITX v4.?"));
-  //active_delay(500);
+  printHeader();
 
   //  initMeter(); //not used in this build
   initSettings();
@@ -408,6 +417,8 @@ void setup() {
    The loop checks for keydown, ptt, function button and tuning.
 */
 void loop() {
+  printHeader();
+
   cwKeyer();
   if (!txCAT)
     checkPTT();

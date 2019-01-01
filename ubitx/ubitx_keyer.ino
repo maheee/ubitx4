@@ -131,6 +131,10 @@ char update_PaddleLatch(byte isUpdateKeyState) {
 }
 
 void cwKeyer(void) {
+#ifdef DISABLE_KEYER
+  return;
+#endif
+
   lastPaddle = 0;
   bool continue_loop = true;
   unsigned tmpKeyControl = 0;
