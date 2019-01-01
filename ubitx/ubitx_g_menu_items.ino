@@ -1,4 +1,4 @@
-#define printCond(C, A, B) printLineF2(C ? F(A) : F(B));
+#define printCond(C, A, B) printLineF0(C ? F(A) : F(B));
 
 
 int menuBand(int btn) {
@@ -7,11 +7,11 @@ int menuBand(int btn) {
   unsigned long offset;
 
   if (!btn) {
-    printLineF2(F("Band Select    \x7E"));
+    printLineF0(F("Band Select    \x7E"));
     return;
   }
 
-  printLineF2(F("Band Select:"));
+  printLineF0(F("Band Select"));
   waitForFuncButtonUp();
   ritDisable();
 
@@ -130,11 +130,11 @@ int menuCWSpeed(int btn) {
   wpm = 1200 / cwSpeed;
 
   if (!btn) {
-    printIntValue2("CW Speed ", " WPM\x7E", wpm);
+    printIntValue0("CW Speed ", " WPM\x7E", wpm);
     return;
   }
 
-  printLineF2(F("CW Speed"));
+  printLineF0(F("CW Speed"));
   wpm = getValueByKnob(1, 100, 1,  wpm, "         ", " WPM");
 
   cwSpeed = 1200 / wpm;
@@ -163,7 +163,7 @@ int calibrateClock() {
   startTx(TX_CW);
   si5351bx_setfreq(2, 10000000l);
 
-  printLineF2(F("Setup:Calibrate"));
+  printLineF0(F("Setup:Calibrate"));
   printLongValue1("10 MHz cal: ", "", calibration / 8750);
 
   while (!funcButtonState()) {
@@ -206,7 +206,7 @@ int menuSetupCalibration(int btn) {
   int32_t prev_calibration;
 
   if (!btn) {
-    printLineF2(F("Setup:Calibrate\x7E"));
+    printLineF0(F("Setup:Calibrate\x7E"));
     return 0;
   }
 
@@ -233,14 +233,14 @@ void menuSetupCarrier(int btn) {
   unsigned long prevCarrier;
 
   if (!btn) {
-    printLineF2(F("Setup:BFO      \x7E"));
+    printLineF0(F("Setup:BFO      \x7E"));
     return;
   }
 
   prevCarrier = usbCarrier;
 
   printInfoF(F("Tune to best Signal"), F("Press to confirm."));
-  printLineF2(F("Setup:BFO"));
+  printLineF0(F("Setup:BFO"));
 
   usbCarrier = 11995000l;
   si5351bx_setfreq(0, usbCarrier);
@@ -277,14 +277,14 @@ void menuSetupCwTone(int btn) {
   int prev_sideTone;
 
   if (!btn) {
-    printLineF2(F("Setup:CW Tone  \x7E"));
+    printLineF0(F("Setup:CW Tone  \x7E"));
     return;
   }
 
   prev_sideTone = sideTone;
 
   printInfoF(F("Tune CW tone"), F("PTT to confirm."));
-  printLineF2(F("Setup:CW Tone"));
+  printLineF0(F("Setup:CW Tone"));
 
   tone(PIN_CW_TONE, sideTone);
   printIntValue1("", "", sideTone);
@@ -322,11 +322,11 @@ void menuReadADC(int btn) {
   int adc;
 
   if (!btn) {
-    printLineF2(F("Setup:Read ADC \x7E"));
+    printLineF0(F("Setup:Read ADC \x7E"));
     return;
   }
 
-  printLineF2(F("Setup:Read ADC"));
+  printLineF0(F("Setup:Read ADC"));
 
   while (!funcButtonState()) {
     adc = analogRead(PIN_ANALOG_KEYER);
@@ -342,11 +342,11 @@ void menuSetupCwDelay(int btn) {
   int prev_cw_delay;
 
   if (!btn) {
-    printLineF2(F("Setup:CW Delay \x7E"));
+    printLineF0(F("Setup:CW Delay \x7E"));
     return;
   }
 
-  printLineF2(F("Setup:CW Delay"));
+  printLineF0(F("Setup:CW Delay"));
   prev_cw_delay = cwDelayTime;
   cwDelayTime = getValueByKnob(10, 1000, 50,  cwDelayTime, "        ", " ms");
 
@@ -358,21 +358,21 @@ void menuSetupKeyer(int btn) {
 
   if (!btn) {
     if (!Iambic_Key) {
-      printLineF2(F("Setup:CW(Hand)\x7E"));
+      printLineF0(F("Setup:CW(Hand)\x7E"));
     } else if (keyerControl & IAMBICB) {
-      printLineF2(F("Setup:CW(IambA)\x7E"));
+      printLineF0(F("Setup:CW(IambA)\x7E"));
     } else {
-      printLineF2(F("Setup:CW(IambB)\x7E"));
+      printLineF0(F("Setup:CW(IambB)\x7E"));
     }
     return;
   }
 
   if (!Iambic_Key) {
-    printLineF2(F("Setup:CW"));
+    printLineF0(F("Setup:CW"));
   } else if (keyerControl & IAMBICB) {
-    printLineF2(F("Setup:CW"));
+    printLineF0(F("Setup:CW"));
   } else {
-    printLineF2(F("Setup:CW"));
+    printLineF0(F("Setup:CW"));
   }
 
   if (!Iambic_Key) {
@@ -424,7 +424,7 @@ void menuSetupKeyer(int btn) {
 
 void menuExit(int btn) {
   if (!btn) {
-    printLineF2(F("Exit Menu      \x7E"));
+    printLineF0(F("Exit Menu      \x7E"));
   } else {
     printStateChangeF(F("Exiting ..."));
   }

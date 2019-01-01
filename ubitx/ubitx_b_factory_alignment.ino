@@ -9,79 +9,54 @@ void btnWaitForClick() {
   active_delay(50);
 }
 
-/**
-   Take a deep breath, math(ematics) ahead
-   The 25 mhz oscillator is multiplied by 35 to run the vco at 875 mhz
-   This is divided by a number to generate different frequencies.
-   If we divide it by 875, we will get 1 mhz signal
-   So, if the vco is shifted up by 875 hz, the generated frequency of 1 mhz is shifted by 1 hz (875/875)
-   At 12 Mhz, the carrier will needed to be shifted down by 12 hz for every 875 hz of shift up of the vco
-*/
+void testFrequency(long frequency) {
+  setFrequency(frequency);
+  updateDisplay();
+  while (!funcButtonState()) {
+    checkPTT();
+    active_delay(20);
+  }
+  waitForFuncButtonUp();
+}
+
 void factory_alignment() {
+  printInfoF(F("#1: Calibration"), F(""));
   calibrateClock();
 
   if (calibration == 0) {
-    printLineF2(F("Setup Aborted"));
+    printStateChangeF(F("Setup Aborted"));
     return;
   }
 
   //move it away to 7.160 for an LSB signal
   setFrequency(7170000l);
   updateDisplay();
-  printLineF2(F("#2:BFO"));
-  active_delay(1000);
+
+  printInfoF(F("#2: BFO"), F(""));
 
   usbCarrier = 11994999l;
   menuSetupCarrier(1);
 
   if (usbCarrier == 11994999l) {
-    printLineF2(F("Setup Aborted"));
+    printStateChangeF(F("Setup Aborted"));
     return;
   }
 
-  printLineF2(F("#3:Test 3.5MHz"));
+  printInfoF(F("#3: Test 3.5MHz"), F(""));
   isUSB = false;
-  setFrequency(3500000l);
-  updateDisplay();
+  testFrequency(3500000l);
 
-  while (!btnDown()) {
-    checkPTT();
-    active_delay(100);
-  }
+  printInfoF(F("#4: Test 7MHz"), F(""));
+  testFrequency(7150000l);
 
-  btnWaitForClick();
-  printLineF2(F("#4:Test 7MHz"));
-
-  setFrequency(7150000l);
-  updateDisplay();
-  while (!btnDown()) {
-    checkPTT();
-    active_delay(100);
-  }
-
-  btnWaitForClick();
-  printLineF2(F("#5:Test 14MHz"));
-
+  printInfoF(F("#5: Test 14MHz"), F(""));
   isUSB = true;
-  setFrequency(14000000l);
-  updateDisplay();
-  while (!btnDown()) {
-    checkPTT();
-    active_delay(100);
-  }
+  testFrequency(14000000l);
 
-  btnWaitForClick();
-  printLineF2(F("#6:Test 28MHz"));
-
-  setFrequency(28000000l);
-  updateDisplay();
-  while (!btnDown()) {
-    checkPTT();
-    active_delay(100);
-  }
-
-  printLineF2(F("Alignment done"));
-  active_delay(1000);
+  printInfoF(F("#6: Test 28MHz"), F(""));
+  testFrequency(28000000l);
+  
+  printInfoF(F("Alignment done!"), F(""));
 
   isUSB = false;
   setFrequency(7150000l);

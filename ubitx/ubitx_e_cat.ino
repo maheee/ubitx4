@@ -357,7 +357,7 @@ void processCATCommand2(byte* cmd) {
       itoa(cmd[4], b, 16);
       strcat(b, ">");
       strcat(b, c);
-      printLine2(b);
+      printLine0(b);
       response[0] = 0x00;
       Serial.write(response[0]);
   }

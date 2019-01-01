@@ -1,10 +1,24 @@
 /**
    The user interface of the ubitx consists of the encoder, the push-button on top of it
    and the 16x2 LCD display.
-   The upper line of the display is constantly used to display frequency and status
-   of the radio. Occasionally, it is used to provide a two-line information that is
-   quickly cleared up.
 */
+
+byte life_indicator_1[8] = { B11100, B11000, B10000, B00000, B00000, B00000, B00000 };
+byte life_indicator_2[8] = { B00111, B00011, B00001, B00000, B00000, B00000, B00000 };
+byte life_indicator_3[8] = { B00000, B00000, B00000, B00000, B00001, B00011, B00111 };
+byte life_indicator_4[8] = { B00000, B00000, B00000, B00000, B10000, B11000, B11100 };
+
+// initializes the custom characters
+// we start from char 1 as char 0 terminates the string!
+void initLcd() {
+  lcd.createChar(1, life_indicator_1);
+  lcd.createChar(2, life_indicator_2);
+  lcd.createChar(3, life_indicator_3);
+  lcd.createChar(4, life_indicator_4);
+  // lcd.createChar(5, life_indicator_1);
+  // lcd.createChar(6, life_indicator_1);
+  // lcd.createChar(7, life_indicator_1);
+}
 
 // The generic routine to display one line on the LCD
 void printLine(char linenmbr, char *c) {
@@ -51,21 +65,21 @@ void printLongValue(char linenmbr, char* prefix, char *postfix, long value) {
 }
 
 void printInfoF(const __FlashStringHelper *c1, const __FlashStringHelper *c2) {
-  printLineF2(c1);
+  printLineF0(c1);
   printLineF1(c2);
   active_delay(2000);
 }
 
 void printStateChangeF(const __FlashStringHelper *c) {
   printLine1("");
-  printLineF2(c);
+  printLineF0(c);
   active_delay(500);
-  printLine2("");
+  printLine0("");
   updateDisplay();
 }
 
-// this builds up the top line of the display with frequency and mode
-void updateDisplay() {
+// this builds up the line of the display with frequency and mode
+void updateDisplayInLine(char linenmbr) {
   memset(c, 0, sizeof(c));
   memset(b, 0, sizeof(b));
 
@@ -111,6 +125,6 @@ void updateDisplay() {
 
   if (inTx)
     strcat(c, " TX");
-  printLine(1, c);
+  printLine(linenmbr, c);
 }
 

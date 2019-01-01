@@ -4,33 +4,39 @@
 /**
    Switches for testing
    should all be commented out when building for prod
+*//*
+#define DISABLE_CAT
+#define DISABLE_KEYER
+#define DISABLE_SI5351
+#define ENC_SPEED_MULTIPLIER 2
 */
-// #define DISABLE_CAT
-// #define DISABLE_KEYER
-// #define DISABLE_SI5351
-// #define ENC_SPEED_MULTIPLIER 2
-
 
 /**
    Config
 */
-#define HEADER "uBITX v4.?"
+#define HEADER   "uBITX v5.X"
+#define HEADER_1 "uBITX v5.X     \1"
+#define HEADER_2 "uBITX v5.X     \2"
+#define HEADER_3 "uBITX v5.X     \3"
+#define HEADER_4 "uBITX v5.X     \4"
 
 /**
-   Helper
+   Helper for printing lines
+   Exchange 1 and 0 if you feel the lines should be the other way around
 */
-// short cut to print first or second line
+#define printLineF0(x) (printLineF(0, x))
 #define printLineF1(x) (printLineF(1, x))
-#define printLineF2(x) (printLineF(0, x))
 
+#define printLine0(x) (printLine(0, x))
 #define printLine1(x) (printLine(1, x))
-#define printLine2(x) (printLine(0, x))
 
+#define printIntValue0(prefix, suffix, value) (printIntValue(0, prefix, suffix, value))
 #define printIntValue1(prefix, suffix, value) (printIntValue(1, prefix, suffix, value))
-#define printIntValue2(prefix, suffix, value) (printIntValue(0, prefix, suffix, value))
 
+#define printLongValue0(prefix, suffix, value) (printLongValue(0, prefix, suffix, value))
 #define printLongValue1(prefix, suffix, value) (printLongValue(1, prefix, suffix, value))
-#define printLongValue2(prefix, suffix, value) (printLongValue(0, prefix, suffix, value))
+
+#define updateDisplay() updateDisplayInLine(1)
 
 /**
     Pin Setup
@@ -164,15 +170,10 @@ void active_delay(int delay_by) {
 
 
 /**
-   Basic User Interface Routines. These check the front panel for any activity
-*/
-
-/**
    The PTT is checked only if we are not already in a cw transmit session
    If the PTT is pressed, we shift to the ritbase if the rit was on
    flip the T/R line to T and update the display to denote transmission
 */
-
 void checkPTT() {
   //we don't check for ptt when transmitting cw
   if (cwTimeout > 0) {
@@ -258,11 +259,9 @@ void setup() {
   Serial.flush();
   lcd.begin(16, 2);
 
-  // we print this line so this shows up even if the raduino
-  //crashes later in the code
-  printLineF2(F(HEADER));
+  printLineF0(F(HEADER));
 
-  // initMeter(); //not used in this build
+  initLcd();
   initSettings();
   initPorts();
   initOscillators();
@@ -272,12 +271,25 @@ void setup() {
   updateDisplay();
 
   if (btnDown()) {
+    printLineF0(F("Fact. alignment!"));
+    printLineF1(F(""));
+    waitForFuncButtonDown();
+    waitForFuncButtonUp();
     factory_alignment();
   }
 }
 
+void printHeader() {
+  switch (millis() / 1000 % 4) {
+    case 0: printLineF0(F(HEADER_1)); break;
+    case 1: printLineF0(F(HEADER_2)); break;
+    case 2: printLineF0(F(HEADER_3)); break;
+    case 3: printLineF0(F(HEADER_4)); break;
+  }
+}
+
 void loop() {
-  printLineF2(F(HEADER));
+  printHeader();
 
   cwKeyer();
 
@@ -299,6 +311,6 @@ void loop() {
     }
   }
 
-  active_delay(20);
+  active_delay(1);
 }
 

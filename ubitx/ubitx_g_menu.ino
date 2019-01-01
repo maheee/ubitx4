@@ -42,17 +42,16 @@ int getValueByKnob(int minimum, int maximum, int step_size,  int initial, char* 
 }
 
 void doMenu() {
-  int select = 0;
-  int menuOn = 2;
+  int select = 15;
 
   waitForFuncButtonUp();
 
-  while (menuOn) {
+  while (true) {
     int btnState = funcButtonState();
     select += enc_read();
 
-    if (select > 150) {
-      select = 150;
+    if (select > 139) {
+      select = 139;
     }
     if (select < 0) {
       select = 0;
@@ -89,22 +88,22 @@ void doMenu() {
       case 6:
         menuCWSpeed(btnState);
         break;
-      case 8:
+      case 7:
         menuSetupCalibration(btnState);
         break;
-      case 9:
+      case 8:
         menuSetupCarrier(btnState);
         break;
-      case 10:
+      case 9:
         menuSetupCwTone(btnState);
         break;
-      case 11:
+      case 10:
         menuSetupCwDelay(btnState);
         break;
-      case 12:
+      case 11:
         menuReadADC(btnState);
         break;
-      case 13:
+      case 12:
         menuSetupKeyer(btnState);
         break;
       default:
