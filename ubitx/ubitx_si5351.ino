@@ -47,6 +47,9 @@ uint8_t  si5351bx_clken = 0xFF;         // Private, all CLK output drivers off
 int32_t calibration = 0;
 
 void i2cWrite(uint8_t reg, uint8_t val) {   // write reg via i2c
+#ifdef DISABLE_SI5351
+  return;
+#endif
   Wire.beginTransmission(SI5351BX_ADDR);
   Wire.write(reg);
   Wire.write(val);
@@ -54,6 +57,9 @@ void i2cWrite(uint8_t reg, uint8_t val) {   // write reg via i2c
 }
 
 void i2cWriten(uint8_t reg, uint8_t *vals, uint8_t vcnt) {  // write array
+#ifdef DISABLE_SI5351
+  return;
+#endif
   Wire.beginTransmission(SI5351BX_ADDR);
   Wire.write(reg);
   while (vcnt--) Wire.write(*vals++);
@@ -61,6 +67,9 @@ void i2cWriten(uint8_t reg, uint8_t *vals, uint8_t vcnt) {  // write array
 }
 
 void si5351bx_init() {                  // Call once at power-up, start PLLA
+#ifdef DISABLE_SI5351
+  return;
+#endif
   uint8_t reg;  uint32_t msxp1;
   Wire.begin();
   i2cWrite(149, 0);                     // SpreadSpectrum off

@@ -9,45 +9,33 @@ extern int32_t calibration;
 extern uint32_t si5351bx_vcoa;
 
 
-void printStateChange(const __FlashStringHelper *c) {
-  printLineF2(c);
-  active_delay(500);
-  printLine2("");
-  updateDisplay();
-}
-
 int getValueByKnob(int minimum, int maximum, int step_size,  int initial, char* prefix, char *postfix) {
   int knob = 0;
-  int knob_value;
+  int knob_value = initial;
 
   waitForFuncButtonUp();
 
-  active_delay(200);
-  knob_value = initial;
+  printIntValue1(prefix, postfix, knob_value);
 
-  strcpy(b, prefix);
-  itoa(knob_value, c, 10);
-  strcat(b, c);
-  strcat(b, postfix);
-  printLine2(b);
-  active_delay(300);
-
-  while (!btnDown() && digitalRead(PIN_PTT) == HIGH) {
-
+  while (!funcButtonState()) {
     knob = enc_read();
-    if (knob != 0) {
-      if (knob_value > minimum && knob < 0)
-        knob_value -= step_size;
-      if (knob_value < maximum && knob > 0)
-        knob_value += step_size;
 
-      printLine2(prefix);
-      itoa(knob_value, c, 10);
-      strcpy(b, c);
-      strcat(b, postfix);
-      printLine1(b);
+    if (knob != 0) {
+      if (knob < 0) {
+        knob_value -= step_size;
+      } else if (knob > 0) {
+        knob_value += step_size;
+      }
+
+      if (knob_value < minimum) {
+        knob_value = minimum;
+      } else if (knob_value > maximum) {
+        knob_value = maximum;
+      }
+
+      printIntValue1(prefix, postfix, knob_value);
     }
-    active_delay(1);
+    active_delay(20);
   }
 
   return knob_value;
@@ -126,7 +114,7 @@ void doMenu() {
       waitForFuncButtonUp();
       return;
     } else {
-      active_delay(10);
+      active_delay(20);
     }
   }
 }

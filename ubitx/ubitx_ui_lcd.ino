@@ -34,6 +34,36 @@ void printLineF(char linenmbr, const __FlashStringHelper *c) {
   printLine(linenmbr, tmpBuff);
 }
 
+void printIntValue(char linenmbr, char* prefix, char *postfix, int value) {
+  strcpy(b, prefix);
+  itoa(value, c, 10);
+  strcat(b, c);
+  strcat(b, postfix);
+  printLine(linenmbr, b);
+}
+
+void printLongValue(char linenmbr, char* prefix, char *postfix, long value) {
+  strcpy(b, prefix);
+  ltoa(value, c, 10);
+  strcat(b, c);
+  strcat(b, postfix);
+  printLine(linenmbr, b);
+}
+
+void printInfoF(const __FlashStringHelper *c1, const __FlashStringHelper *c2) {
+  printLineF2(c1);
+  printLineF1(c2);
+  active_delay(2000);
+}
+
+void printStateChangeF(const __FlashStringHelper *c) {
+  printLine1("");
+  printLineF2(c);
+  active_delay(500);
+  printLine2("");
+  updateDisplay();
+}
+
 // this builds up the top line of the display with frequency and mode
 void updateDisplay() {
   memset(c, 0, sizeof(c));

@@ -7,6 +7,7 @@
 */
 // #define DISABLE_CAT
 // #define DISABLE_KEYER
+// #define DISABLE_SI5351
 // #define ENC_SPEED_MULTIPLIER 2
 
 
@@ -20,6 +21,11 @@
 #define printLine1(x) (printLine(1, x))
 #define printLine2(x) (printLine(0, x))
 
+#define printIntValue1(prefix, suffix, value) (printIntValue(1, prefix, suffix, value))
+#define printIntValue2(prefix, suffix, value) (printIntValue(0, prefix, suffix, value))
+
+#define printLongValue1(prefix, suffix, value) (printLongValue(1, prefix, suffix, value))
+#define printLongValue2(prefix, suffix, value) (printLongValue(0, prefix, suffix, value))
 
 /**
     Pin Setup
@@ -185,33 +191,18 @@ void ritDisable() {
 
 void checkPTT() {
   //we don't check for ptt when transmitting cw
-  if (cwTimeout > 0)
+  if (cwTimeout > 0) {
     return;
+  }
 
   if (digitalRead(PIN_PTT) == 0 && inTx == 0) {
     startTx(TX_SSB);
     active_delay(50); //debounce the PTT
   }
 
-  if (digitalRead(PIN_PTT) == 1 && inTx == 1)
+  if (digitalRead(PIN_PTT) == 1 && inTx == 1) {
     stopTx();
-}
-
-void checkButton() {
-  int i, t1, t2, knob, new_knob;
-
-  //only if the button is pressed
-  if (!btnDown())
-    return;
-  active_delay(50);
-  if (!btnDown()) //debounce
-    return;
-
-  doMenu();
-  //wait for the button to go up again
-  while (btnDown())
-    active_delay(10);
-  active_delay(50);//debounce
+  }
 }
 
 
@@ -229,24 +220,27 @@ void doTuning() {
   if (s != 0) {
     prev_freq = frequency;
 
-    if (s > 4)
+    if (s > 4) {
       frequency += 10000l;
-    else if (s > 2)
+    } else if (s > 2) {
       frequency += 500l;
-    else if (s > 0)
+    } else if (s > 0) {
       frequency +=  50l;
-    else if (s > -2)
+    } else if (s > -2) {
       frequency -= 50l;
-    else if (s > -4)
+    } else if (s > -4) {
       frequency -= 500l;
-    else
+    } else {
       frequency -= 10000l;
+    }
 
-    if (prev_freq < 10000000l && frequency > 10000000l)
+    if (prev_freq < 10000000l && frequency > 10000000l) {
       isUSB = true;
+    }
 
-    if (prev_freq > 10000000l && frequency < 10000000l)
+    if (prev_freq > 10000000l && frequency < 10000000l) {
       isUSB = false;
+    }
 
     setFrequency(frequency);
     updateDisplay();
@@ -263,10 +257,11 @@ void doRIT() {
   int knob = enc_read();
   unsigned long old_freq = frequency;
 
-  if (knob < 0)
+  if (knob < 0) {
     frequency -= 100l;
-  else if (knob > 0)
+  } else if (knob > 0) {
     frequency += 100;
+  }
 
   if (old_freq != frequency) {
     setFrequency(frequency);
@@ -291,7 +286,6 @@ void initSettings() {
   EEPROM.get(CW_SIDETONE, sideTone);
   EEPROM.get(CW_SPEED, cwSpeed);
 
-
   if (usbCarrier > 12000000l || usbCarrier < 11990000l)
     usbCarrier = 11997000l;
   if (vfoA > 35000000l || 3500000l > vfoA)
@@ -314,10 +308,11 @@ void initSettings() {
       isUsbVfoA = 0;
       break;
     default:
-      if (vfoA > 10000000l)
+      if (vfoA > 10000000l) {
         isUsbVfoA = 1;
-      else
+      } else {
         isUsbVfoA = 0;
+      }
   }
 
   EEPROM.get(VFO_B_MODE, x);
@@ -329,10 +324,11 @@ void initSettings() {
       isUsbVfoB = 0;
       break;
     default:
-      if (vfoA > 10000000l)
+      if (vfoA > 10000000l) {
         isUsbVfoB = 1;
-      else
+      } else {
         isUsbVfoB = 0;
+      }
   }
 
   //set the current mode
@@ -341,13 +337,12 @@ void initSettings() {
   //The keyer type splits into two variables
   EEPROM.get(PIN_CW_KEY_TYPE, x);
 
-  if (x == 0)
+  if (x == 0) {
     Iambic_Key = false;
-  else if (x == 1) {
+  } else if (x == 1) {
     Iambic_Key = true;
     keyerControl &= ~IAMBICB;
-  }
-  else if (x == 2) {
+  } else if (x == 2) {
     Iambic_Key = true;
     keyerControl |= IAMBICB;
   }
@@ -395,11 +390,11 @@ void setup() {
   Serial.flush();
   lcd.begin(16, 2);
 
-  //we print this line so this shows up even if the raduino
+  // we print this line so this shows up even if the raduino
   //crashes later in the code
   printHeader();
 
-  //  initMeter(); //not used in this build
+  // initMeter(); //not used in this build
   initSettings();
   initPorts();
   initOscillators();
@@ -408,8 +403,9 @@ void setup() {
   setFrequency(vfoA);
   updateDisplay();
 
-  if (btnDown())
+  if (btnDown()) {
     factory_alignment();
+  }
 }
 
 
@@ -420,16 +416,22 @@ void loop() {
   printHeader();
 
   cwKeyer();
-  if (!txCAT)
+
+  if (!txCAT) {
     checkPTT();
-  checkButton();
+  }
+
+  if (funcButtonState()) {
+    doMenu();
+  }
 
   //tune only when not tranmsitting
   if (!inTx) {
-    if (ritOn)
+    if (ritOn) {
       doRIT();
-    else
+    } else {
       doTuning();
+    }
   }
 
   //we check CAT after the encoder as it might put the radio into TX
