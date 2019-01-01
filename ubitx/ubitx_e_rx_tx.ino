@@ -1,4 +1,25 @@
 /**
+   ritEnable is called with a frequency parameter that determines
+   what the tx frequency will be
+*/
+void ritEnable(unsigned long f) {
+  ritOn = 1;
+  //save the non-rit frequency back into the VFO memory
+  //as RIT is a temporary shift, this is not saved to EEPROM
+  ritTxFrequency = f;
+}
+
+// this is called by the RIT menu routine
+void ritDisable() {
+  if (ritOn) {
+    ritOn = 0;
+    setFrequency(ritTxFrequency);
+    updateDisplay();
+  }
+}
+
+
+/**
    Select the properly tx harmonic filters
 
    LPF_A -> KT1 -> OFF = 21-30 MHz, ON = LPF_B

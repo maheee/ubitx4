@@ -43,7 +43,13 @@ int funcButtonState() {
 }
 
 void waitForFuncButtonUp() {
-  while (funcButtonState() == 1) {
+  while (funcButtonState()) {
+    active_delay(50);
+  }
+}
+
+void waitForFuncButtonDown() {
+  while (!funcButtonState()) {
     active_delay(50);
   }
 }
