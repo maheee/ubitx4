@@ -4,12 +4,12 @@
 /**
    Switches for testing
    should all be commented out when building for prod
-*//*
+*/
 #define DISABLE_CAT
 #define DISABLE_KEYER
 #define DISABLE_SI5351
-#define ENC_SPEED_MULTIPLIER 2
-*/
+#define USE_MOUSE_WHEEL_ENC
+// #define ENC_SPEED_MULTIPLIER 2
 
 /**
    Config
@@ -311,6 +311,6 @@ void loop() {
     }
   }
 
-  active_delay(1);
+  checkCAT();
 }
 

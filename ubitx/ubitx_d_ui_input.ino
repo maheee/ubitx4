@@ -54,7 +54,7 @@ void waitForFuncButtonDown() {
   }
 }
 
-byte enc_state (void) {
+byte enc_state(void) {
   // 0 none
   // 1 A
   // 2 B
@@ -66,13 +66,12 @@ byte enc_state (void) {
 
 int enc_read(void) {
   static byte prevState = 0;
-  byte newState = prevState;
+  byte newState = 0;
 
   unsigned long stop_by = millis() + 50;
   int result = 0;
 
   while (millis() < stop_by) {
-    prevState = newState;
     newState = enc_state();
 
     if (newState == prevState) {
@@ -80,6 +79,7 @@ int enc_read(void) {
       continue;
     }
 
+#ifndef USE_MOUSE_WHEEL_ENC
     //these transitions point to the encoder being rotated anti-clockwise
     if ((prevState == 0 && newState == 2) ||
         (prevState == 2 && newState == 3) ||
@@ -94,6 +94,19 @@ int enc_read(void) {
         (prevState == 2 && newState == 0)) {
       result++;
     }
+#else
+    //these transitions point to the encoder being rotated anti-clockwise
+    if ((prevState == 0 && newState == 3) ||
+        (prevState == 3 && newState == 1)) {
+      result--;
+    }
+    //these transitions point o the enccoder being rotated clockwise
+    if ((prevState == 1 && newState == 3) ||
+        (prevState == 3 && newState == 0)) {
+      result++;
+    }
+#endif
+    prevState = newState;
   }
 #ifdef ENC_SPEED_MULTIPLIER
   result *= ENC_SPEED_MULTIPLIER;
